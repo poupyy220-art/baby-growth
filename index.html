@@ -546,6 +546,30 @@ milestones: milestones
                 if (typeof className === 'number') return <IconComponent size={className} />;
                 return <IconComponent size={T.iconVal} className={className} />;
             };
+
+			const renderIcon = (iconName, className) => {
+const IconComponent = Icons[iconName] || Icons.Star;
+if (typeof className === 'number') return <IconComponent size={className} />;
+return <IconComponent size={T.iconVal} className={className} />;
+};
+
+
+// --- AI milestone dictionary ---
+const milestoneMap = useMemo(() => {
+
+const map = {};
+
+(data.milestones || []).forEach(m => {
+
+if(!map[m.domain]) map[m.domain] = [];
+
+map[m.domain].push(m);
+
+});
+
+return map;
+
+}, [data.milestones]);
             
             const latestGrowthData = useMemo(() => {
                 if (!data.growth || data.growth.length === 0) return null;
@@ -934,6 +958,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
