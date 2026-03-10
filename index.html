@@ -48,8 +48,9 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
-        const Recharts = window.Recharts || {};
-		if (!Recharts) {
+       const Recharts = window.Recharts;
+
+if (!Recharts) {
   document.getElementById("root").innerHTML = "Recharts failed to load";
 }
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
@@ -402,7 +403,7 @@ return(
 
 <div className="bg-purple-50 p-3 rounded-xl mb-3">
 
-<div className={`${styles.small} text-purple-600 font-bold`}>
+<div className={styles.small + " text-purple-600 font-bold"}>
 引導方式
 </div>
 
@@ -420,7 +421,7 @@ return(
 下一階段預測
 </div>
 
-<div className={`${styles.body}`}>
+<div className={styles.body}>
 {item.next_stage}
 </div>
 
@@ -915,6 +916,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
