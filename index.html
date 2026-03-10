@@ -64,7 +64,7 @@ if (!Recharts) {
             medical: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=326886357&single=true&output=csv",
             travel:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=2140673283&single=true&output=csv",
             logs:    "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=491644359&single=true&output=csv",
-            development: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=248325933&single=true&output=csv"
+            development: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=248325933&single=true&output=csv",
 			milestones: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=593137954&single=true&output=csv"
         };
         const BIRTH_DATE = new Date(2024, 11, 26); 
@@ -484,7 +484,7 @@ milestones: []
                             fetchCSV(SHEET_URLS.medical),
                             fetchCSV(SHEET_URLS.travel),
                             fetchCSV(SHEET_URLS.logs),
-                            fetchCSV(SHEET_URLS.development)
+                            fetchCSV(SHEET_URLS.development),
 							fetchCSV(SHEET_URLS.milestones)
                         ]);
 
@@ -501,15 +501,17 @@ milestones: []
                         const cleanTravel = travel.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
                         const cleanLogs = logs.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
                         const cleanDev = development.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
+						const cleanMilestones = milestones.filter(r => r.domain);
 
                         setData({
-growth: cleanGrowth,
-medical: cleanMedical,
-travel: cleanTravel,
-logs: cleanLogs,
-development: cleanDev,
-milestones: milestones
-});
+                        growth: cleanGrowth,
+						medical: cleanMedical,
+						travel: cleanTravel,
+						logs: cleanLogs,
+						development: cleanDev,
+						milestones: cleanMilestones
+						
+						});
                         if (cleanGrowth.length === 0 && cleanMedical.length === 0 && cleanLogs.length === 0 && cleanDev.length === 0) throw new Error("Empty Data");
 
                     } catch (e) {
@@ -1001,6 +1003,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
