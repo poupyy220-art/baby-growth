@@ -185,7 +185,7 @@ const calculateProgress = () => {
 
 
 // --- 發展雷達 ---
-const DevelopmentRadar = ({ data }) => {
+const DevelopmentRadar = ({ data, logScores }) => {
 
 if (!window.Recharts) return null;
 
@@ -220,6 +220,11 @@ scores[d.domain] += weight;
 }
 
 });
+
+// 加入 logs 行為分數
+Object.keys(scores).forEach(k => {
+scores[k] += (logScores?.[k] || 0);
+});	
 
 // 轉成 RadarChart 格式
 const radarData = [
@@ -564,8 +569,50 @@ map[m.domain].push(m);
 });
 
 return map;
-
 }, [data.milestones]);
+
+
+// ⭐ 在這裡新增
+// --- AI log domain scoring ---
+const logDomainScores = useMemo(() => {
+
+const scores = {
+gross_motor:0,
+fine_motor:0,
+language:0,
+cognitive:0,
+social:0
+};
+
+(data.logs || []).forEach(log => {
+
+const text = (log.title + " " + log.parent_text).toLowerCase();
+
+if(text.includes("走") || text.includes("跑") || text.includes("站")){
+scores.gross_motor += 1;
+}
+
+if(text.includes("翻書") || text.includes("抓") || text.includes("拼圖")){
+scores.fine_motor += 1;
+}
+
+if(text.includes("叫") || text.includes("說") || text.includes("爸爸") || text.includes("媽媽")){
+scores.language += 1;
+}
+
+if(text.includes("模仿") || text.includes("理解") || text.includes("找")){
+scores.cognitive += 1;
+}
+
+if(text.includes("分享") || text.includes("指") || text.includes("互動")){
+scores.social += 1;
+}
+
+});
+
+return scores;
+
+}, [data.logs]);			
             
             const latestGrowthData = useMemo(() => {
                 if (!data.growth || data.growth.length === 0) return null;
@@ -738,7 +785,7 @@ t==='dev'? '📊 發展月報':
 妹妹發展雷達
 </h3>
 
-<DevelopmentRadar data={data.development} />
+<DevelopmentRadar data={data.development} logScores={logDomainScores} />
 <DevelopmentAnalysis data={data.development} />
 
 </div>
@@ -954,6 +1001,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
