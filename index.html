@@ -48,7 +48,10 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
-        const Recharts = window.Recharts || {};
+        const Recharts = window.Recharts;
+		if (!Recharts) {
+  document.getElementById("root").innerHTML = "Recharts failed to load";
+}
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
 
         // --- 設定與常數 ---
@@ -910,4 +913,5 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(React.createElement(App));
     </script>
 </body>
+
 </html>
