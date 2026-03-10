@@ -370,11 +370,11 @@ return(
 
 <div className="flex justify-between items-center mb-2">
 
-<span className={`${styles.small} bg-purple-50 text-purple-600 px-3 py-1 rounded-full`}>
+<span className={styles.small + " bg-purple-50 text-purple-600 px-3 py-1 rounded-full"}>
 {item.date}
 </span>
 
-<span className={`${styles.small} px-2 py-1 rounded-full ${stageColor[item.stage]}`}>
+<span className={styles.small + " px-2 py-1 rounded-full " + stageColor[item.stage]}>
 {item.stage}
 </span>
 
@@ -390,8 +390,8 @@ return(
 
 <div className="bg-gray-50 p-3 rounded-xl mb-3">
 
-<div className={`${styles.small} text-gray-400 font-bold mb-1`}>
-發展分析
+<div className={styles.small + " text-gray-400 font-bold mb-1"}>
+	發展分析
 </div>
 
 <div className={`${styles.body}`}>
@@ -915,6 +915,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
