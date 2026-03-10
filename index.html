@@ -417,16 +417,12 @@ return(
 
 </div>
 
-{item.next_stage && (
-
-<div className="bg-indigo-50 p-3 rounded-xl">
-
-<div className={styles.small + " text-indigo-600 font-bold"}>
-下一階段預測
-</div>
-
 <div className={styles.body}>
-{item.next_stage}
+{
+item.next_stage 
+? item.next_stage
+: (milestoneMap[item.domain]?.[0]?.milestone || "觀察下一階段發展")
+}
 </div>
 
 </div>
@@ -958,6 +954,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
