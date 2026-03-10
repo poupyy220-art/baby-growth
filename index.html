@@ -374,7 +374,7 @@ emerging:"bg-yellow-100 text-yellow-700",
 next:"bg-indigo-100 text-indigo-700"
 }
 
-return(
+return (
 
 <div className="bg-white rounded-2xl p-5 shadow-sm border-l-4 border-purple-400 mb-4">
 
@@ -423,16 +423,15 @@ return(
 </div>
 
 <div className={styles.body}>
-{
-item.next_stage 
-? item.next_stage
-: (milestoneMap[item.domain]?.[0]?.milestone || "觀察下一階段發展")
+{item.next_stage
+  ? item.next_stage
+  : (milestoneMap[item.domain]?.[0]?.milestone || "觀察下一階段發展")}
+</div>
+
+</div>
+
+)
 }
-</div>
-
-</div>
-
-)}
 		
 
         // --- 主要 Dashboard ---
@@ -1007,6 +1006,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
