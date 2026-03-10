@@ -586,7 +586,7 @@ social:0
 
 (data.logs || []).forEach(log => {
 
-const text = (log.title + " " + log.parent_text).toLowerCase();
+const text = ((log.title || "") + " " + (log.parent_text || "")).toLowerCase();
 
 if(text.includes("走") || text.includes("跑") || text.includes("站")){
 scores.gross_motor += 1;
@@ -1009,6 +1009,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
