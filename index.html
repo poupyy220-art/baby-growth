@@ -434,8 +434,6 @@ item.next_stage
 
 )}
 		
-)
-}
 
         // --- 主要 Dashboard ---
         const GrowthDashboard = () => {
@@ -499,7 +497,7 @@ milestones: []
                         const cleanTravel = travel.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
                         const cleanLogs = logs.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
                         const cleanDev = development.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
-						const cleanMilestones = milestones.filter(r => r.domain);
+						const cleanMilestones = milestones .filter(r => r.domain) .map(r => ({ ...r, month: parseInt(r.month) }));
 
                         setData({
                         growth: cleanGrowth,
@@ -1009,6 +1007,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
