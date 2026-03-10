@@ -358,7 +358,7 @@ return(
             </div>
         );
 
-       const DevelopmentCard = ({ item, styles, renderIcon }) => {
+       const DevelopmentCard = ({ item, styles, renderIcon, milestoneMap }) => {
 
 const domainMap = {
 gross_motor:"🏃 大動作",
@@ -479,7 +479,7 @@ milestones: []
             useEffect(() => {
                 const loadData = async () => {
                     try {
-                        const [growth, medical, travel, logs, development] = await Promise.all([
+                        const [growth, medical, travel, logs, development, milestones] = await Promise.all([
                             fetchCSV(SHEET_URLS.growth),
                             fetchCSV(SHEET_URLS.medical),
                             fetchCSV(SHEET_URLS.travel),
@@ -927,7 +927,15 @@ return (
                         
                         {tab === 'dev' && (
                             data.development.length > 0 ? (
-                                data.development.map((item, i) => <DevelopmentCard key={i} item={item} styles={T} renderIcon={renderIcon} />)
+                                data.development.map((item, i) =>
+<DevelopmentCard
+key={i}
+item={item}
+styles={T}
+renderIcon={renderIcon}
+milestoneMap={milestoneMap}
+/>
+)
                             ) : (
                                 <div className="text-center py-10">
                                     <div className="text-4xl mb-3">📊</div>
@@ -935,7 +943,7 @@ return (
                                 </div>
                             )
                         )}
-                    </div>
+                    
                     <div className="text-center text-[10px] text-gray-400 mt-6">Designed for Meimei | 2026 DevReport</div>
                 </div>
             );
@@ -1003,6 +1011,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
