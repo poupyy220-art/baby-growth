@@ -380,7 +380,7 @@ return(
 
 </div>
 
-<h3 className={`${styles.h3} font-bold text-gray-800`}>
+<h3 className={styles.h3 + " font-bold text-gray-800"}>	
 {item.skill}
 </h3>
 
@@ -394,7 +394,7 @@ return(
 	發展分析
 </div>
 
-<div className={`${styles.body}`}>
+<div className={styles.body}>	
 {item.analysis}
 </div>
 
@@ -406,7 +406,7 @@ return(
 引導方式
 </div>
 
-<div className={`${styles.body}`}>
+<div className={styles.body}>
 {item.suggestion}
 </div>
 
@@ -416,7 +416,7 @@ return(
 
 <div className="bg-indigo-50 p-3 rounded-xl">
 
-<div className={`${styles.small} text-indigo-600 font-bold`}>
+<div className={styles.small + " text-indigo-600 font-bold"}>
 下一階段預測
 </div>
 
@@ -915,6 +915,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
