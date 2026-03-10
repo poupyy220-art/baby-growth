@@ -65,6 +65,7 @@ if (!Recharts) {
             travel:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=2140673283&single=true&output=csv",
             logs:    "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=491644359&single=true&output=csv",
             development: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=248325933&single=true&output=csv"
+			milestones: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=593137954&single=true&output=csv"
         };
         const BIRTH_DATE = new Date(2024, 11, 26); 
         
@@ -441,7 +442,14 @@ return(
         const GrowthDashboard = () => {
             const [tab, setTab] = useState('journey');
             const [loading, setLoading] = useState(true);
-            const [data, setData] = useState({ growth: [], medical: [], travel: [], logs: [], development: [] }); 
+            const [data, setData] = useState({ 
+growth: [], 
+medical: [], 
+travel: [], 
+logs: [], 
+development: [],
+milestones: []
+});
             const [error, setError] = useState(null);
             const [largeText, setLargeText] = useState(false);
             const [ageStr, setAgeStr] = useState("...");
@@ -918,6 +926,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
