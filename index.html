@@ -922,7 +922,7 @@ return (
                         
                         {tab === 'dev' && (
                             data.development.length > 0 ? (
-                                data.development.map((item, i) =>
+                                data.development.map((item, i) => (
 <DevelopmentCard
 key={i}
 item={item}
@@ -945,7 +945,7 @@ milestoneMap={milestoneMap}
     </div>
   </>
 )
-                        
+)}                        
                     
                 </div>
             );
@@ -1013,6 +1013,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
