@@ -484,6 +484,7 @@ milestones: []
                             fetchCSV(SHEET_URLS.travel),
                             fetchCSV(SHEET_URLS.logs),
                             fetchCSV(SHEET_URLS.development)
+							fetchCSV(SHEET_URLS.milestones)
                         ]);
 
                         const cleanGrowth = growth.filter(r => r.month).map(r => ({
@@ -500,7 +501,14 @@ milestones: []
                         const cleanLogs = logs.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
                         const cleanDev = development.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
 
-                        setData({ growth: cleanGrowth, medical: cleanMedical, travel: cleanTravel, logs: cleanLogs, development: cleanDev });
+                        setData({
+growth: cleanGrowth,
+medical: cleanMedical,
+travel: cleanTravel,
+logs: cleanLogs,
+development: cleanDev,
+milestones: milestones
+});
                         if (cleanGrowth.length === 0 && cleanMedical.length === 0 && cleanLogs.length === 0 && cleanDev.length === 0) throw new Error("Empty Data");
 
                     } catch (e) {
@@ -926,6 +934,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
