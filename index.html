@@ -187,7 +187,13 @@ const calculateProgress = () => {
 // --- 發展雷達 ---
 const DevelopmentRadar = ({ data, logScores }) => {
 
-if (!window.Recharts) return null;
+if (!window.Recharts) {
+  return (
+    <div className="text-center text-xs text-gray-400 py-8">
+      Radar chart unavailable
+    </div>
+  );
+}
 
 const {
 RadarChart,
@@ -425,7 +431,7 @@ return (
 <div className={styles.body}>
 {item.next_stage
   ? item.next_stage
-  : (milestoneMap[item.domain]?.[0]?.milestone || "觀察下一階段發展")}
+  : (milestoneMap?.[item.domain]?.[0]?.milestone || "觀察下一階段發展")}
 </div>
 
 </div>
@@ -943,7 +949,7 @@ return (
             <div className="text-center text-[10px] text-gray-400 mt-6">
                 Designed for Meimei | 2026 DevReport
             </div>
-)}
+))}
         // --- 🔒 新增：應用程式主入口 (負責鎖屏邏輯) ---
         const App = () => {
             const [unlocked, setUnlocked] = useState(false);
@@ -1006,6 +1012,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
