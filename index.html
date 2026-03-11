@@ -591,11 +591,31 @@ social:0
 
 const text = ((log.title || "") + " " + (log.parent_text || "")).toLowerCase();
 
-if(text.includes("走") || text.includes("跑") || text.includes("站")){
+if(
+text.includes("走") ||
+text.includes("跑") ||
+text.includes("站") ||
+text.includes("爬") ||
+text.includes("跳") ||
+text.includes("扶") ||
+text.includes("移動")
+){
 scores.gross_motor += 1;
 }
 
-if(text.includes("翻書") || text.includes("抓") || text.includes("拼圖")){
+if(
+text.includes("翻書") ||
+text.includes("抓") ||
+text.includes("拿") ||
+text.includes("翻") ||
+text.includes("捏") ||
+text.includes("按") ||
+text.includes("拼圖") ||
+text.includes("積木") ||
+text.includes("指") ||
+text.includes("放") ||
+text.includes("拿起")
+){
 scores.fine_motor += 1;
 }
 
@@ -1019,6 +1039,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
