@@ -853,23 +853,15 @@ t==='dev'? '📊 發展月報':
                         ))}
 
 
-{tab === 'journey' && journey.map((item,i)=>{
+{tab === 'journey' && journey.map((item,i) => (
 
-const color={
+<div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 ${
+{
 medical:'border-blue-300',
 travel:'border-green-300',
 dev:'border-purple-300'
-}
-
-const label={
-medical:'🏥 醫療里程碑',
-travel:'✈️ 人生旅行',
-dev:'📊 發展突破'
-}
-
-return(
-
-<div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 ${color[item.type]}`}>
+}[item.type]
+}`}>
 
 <div className="flex justify-between mb-1">
 
@@ -878,7 +870,13 @@ return(
 </span>
 
 <span className={`${T.small} font-bold text-gray-500`}>
-{label[item.type]}
+{
+{
+medical:'🏥 醫療里程碑',
+travel:'✈️ 人生旅行',
+dev:'📊 發展突破'
+}[item.type]
+}
 </span>
 
 </div>
@@ -893,28 +891,18 @@ return(
 
 </div>
 
-)
+))}
 
-})}
+{tab === 'timeline' && timeline.map((item,i) => (
 
-                       {tab === 'timeline' && timeline.map((item,i)=>{
-
-const color = {
+<div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 ${
+{
 log:'border-pink-300',
 medical:'border-blue-300',
 travel:'border-green-300',
 dev:'border-purple-300'
-}
-
-const label = {
-log:'📅 日常',
-medical:'🏥 醫療',
-travel:'✈️ 旅行',
-dev:'📊 發展'
-}
-
-return (
-<div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 ${color[item.type]}`}>
+}[item.type]
+}`}>
 
 <div className="flex justify-between mb-1">
 <span className={`${T.small} text-gray-400`}>
@@ -922,7 +910,14 @@ return (
 </span>
 
 <span className={`${T.small} font-bold text-gray-500`}>
-{label[item.type]}
+{
+{
+log:'📅 日常',
+medical:'🏥 醫療',
+travel:'✈️ 旅行',
+dev:'📊 發展'
+}[item.type]
+}
 </span>
 </div>
 
@@ -937,10 +932,8 @@ return (
 )}
 
 </div>
-);
-})}
 
-						
+))}					
 
 {tab === 'log' && data.logs.map((log, i) => (
     <SmartLog
@@ -1043,6 +1036,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
