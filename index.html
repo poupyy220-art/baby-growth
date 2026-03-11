@@ -1082,16 +1082,12 @@ logScores={logDomainScores}
                                     <p className="text-gray-400 text-sm">
                                         還沒有發展評估資料喔！<br/>請在 Development 分頁新增
                                     </p>
-                                </div>
- <div className="text-center text-[10px] text-gray-400 mt-6">
-                            Designed for Meimei | 2026 DevReport
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};      
+                        </div> {/* 1. 關閉 "Designed for Meimei" 上方的內容容器 */}
+                )} {/* 2. 結束 tab === 'dev' 的判斷括號 */}
+            </div> {/* 3. 關閉第 984 行開啟的內容區域 mt-4 */}
+        </div> {/* 4. 關閉第 968 行開啟的最外層主容器 container */}
+    ); // 5. 結束 GrowthDashboard 的 return 括號
+}; // 6. 結束 GrowthDashboard 組件定義
 // --- 🔒 應用程式主入口 (負責鎖屏邏輯) ---
 const App = () => {
         const [unlocked, setUnlocked] = useState(false);
@@ -1152,6 +1148,7 @@ const App = () => {
     </script>
 </body>
 </html>
+
 
 
 
