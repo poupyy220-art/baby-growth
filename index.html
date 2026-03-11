@@ -422,22 +422,15 @@ return(
 
 </div>
 
-<div className={styles.body}>
-{
-item.next_stage 
-? item.next_stage
-: (milestoneMap[item.domain]?.[0]?.milestone || "觀察下一階段發展")
-}
-</div>
-
-</div>
-
-)}
-
-</div>
-
-)
-}
+            <div className={styles.body}>
+                {item.next_stage 
+                    ? item.next_stage
+                    : (milestoneMap[item.domain]?.[0]?.milestone || "觀察下一階段發展")
+                }
+            </div>
+        </div>
+    );
+};
 
         // --- 主要 Dashboard ---
         const GrowthDashboard = () => {
@@ -542,12 +535,6 @@ milestones: []
                 link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
                 link.setAttribute("download", `Meimei_Cloud_Backup.csv`);
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            };
-
-            const renderIcon = (iconName, className) => {
-                const IconComponent = Icons[iconName] || Icons.Star; 
-                if (typeof className === 'number') return <IconComponent size={className} />;
-                return <IconComponent size={T.iconVal} className={className} />;
             };
 
 			const renderIcon = (iconName, className) => {
@@ -1011,6 +998,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
