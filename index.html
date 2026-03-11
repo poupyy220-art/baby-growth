@@ -1063,95 +1063,98 @@ logScores={logDomainScores}
       />
    ))}
                         
-{tab === 'dev' && (
-    data.development.length > 0 ? (
-        data.development.map((item, i) => (
-            <DevelopmentCard
-                key={i}
-                item={item}
-                styles={T}
-                renderIcon={renderIcon}
-                milestoneMap={milestoneMap}
-            />
-        ))
-    ) : (
-        <div>
-            <div className="text-center py-10">
-                <div className="text-4xl mb-3">📊</div>
-                <p className="text-gray-400 text-sm">
-                    還沒有發展評估資料喔！<br/>請在 Development 分頁新增
-                </p>
-            </div>
+// --- 這是修正後的 Dev 分頁與 App 入口 ---
+                    {tab === 'dev' && (
+                        data.development.length > 0 ? (
+                            data.development.map((item, i) => (
+                                <DevelopmentCard
+                                    key={i}
+                                    item={item}
+                                    styles={T}
+                                    renderIcon={renderIcon}
+                                    milestoneMap={milestoneMap}
+                                />
+                            ))
+                        ) : (
+                            <div>
+                                <div className="text-center py-10">
+                                    <div className="text-4xl mb-3">📊</div>
+                                    <p className="text-gray-400 text-sm">
+                                        還沒有發展評估資料喔！<br/>請在 Development 分頁新增
+                                    </p>
+                                </div>
+                                <div className="text-center text-[10px] text-gray-400 mt-6">
+                                    Designed for Meimei | 2026 DevReport
+                                </div>
+                            </div>
+                        )
+                    )}
+                </div> {/* 關閉內容區域容器 */}
+            </div> 
+        ); // 結束 GrowthDashboard 的 return
+    }; // 結束 GrowthDashboard 組件
 
-            <div className="text-center text-[10px] text-gray-400 mt-6">
-                Designed for Meimei | 2026 DevReport
+    // --- 🔒 應用程式主入口 (負責鎖屏邏輯) ---
+    const App = () => {
+        const [unlocked, setUnlocked] = useState(false);
+        const [input, setInput] = useState("");
+        const [errorMsg, setErrorMsg] = useState("");
+
+        useEffect(() => {
+            if(localStorage.getItem('mm_unlocked') === 'true') {
+                setUnlocked(true);
+            }
+        }, []);
+
+        const handleLogin = (e) => {
+            e.preventDefault();
+            if (input === PASSCODE) {
+                setUnlocked(true);
+                localStorage.setItem('mm_unlocked', 'true');
+            } else {
+                setErrorMsg("密碼錯誤，請試試妹妹生日");
+                setInput("");
+            }
+        };
+
+        if (!unlocked) {
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-pink-50/50">
+                    <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center border-2 border-white">
+                        <div className="bg-pink-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">🔒</div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">請輸入通關密碼</h2>
+                        <p className="text-gray-400 text-sm mb-6">為了保護隱私，請輸入密碼以繼續</p>
+                        
+                        <form onSubmit={handleLogin}>
+                            <input 
+                                type="number" pattern="\d*" 
+                                placeholder="輸入密碼..." 
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-lg mb-3 focus:ring-2 ring-pink-400 outline-none transition-all"
+                                value={input}
+                                onChange={(e) => {setInput(e.target.value); setErrorMsg("");}}
+                                autoFocus
+                            />
+                            {errorMsg && <p className="text-red-500 text-sm mb-3 font-bold">{errorMsg}</p>}
+                            <button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 transition-all active:scale-95">
+                                解鎖 🔓
+                            </button>
+                        </form>
+                        <p className="mt-6 text-xs text-gray-300">Meimei's Growth Record</p>
                     </div>
                 </div>
             );
-        };
+        }
 
-        // --- 🔒 新增：應用程式主入口 (負責鎖屏邏輯) ---
-        const App = () => {
-            const [unlocked, setUnlocked] = useState(false);
-            const [input, setInput] = useState("");
-            const [errorMsg, setErrorMsg] = useState("");
+        return <GrowthDashboard />;
+    };
 
-            // 檢查是否曾經登入過 (可選：如果要關掉網頁就重鎖，把這段 localStorage 註解掉即可)
-            useEffect(() => {
-                if(localStorage.getItem('mm_unlocked') === 'true') {
-                    setUnlocked(true);
-                }
-            }, []);
-
-            const handleLogin = (e) => {
-                e.preventDefault();
-                if (input === PASSCODE) {
-                    setUnlocked(true);
-                    localStorage.setItem('mm_unlocked', 'true'); // 記住登入狀態
-                } else {
-                    setErrorMsg("密碼錯誤，請試試妹妹生日");
-                    setInput("");
-                }
-            };
-
-            if (!unlocked) {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-pink-50/50">
-                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center border-2 border-white">
-                            <div className="bg-pink-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">🔒</div>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2">請輸入通關密碼</h2>
-                            <p className="text-gray-400 text-sm mb-6">為了保護隱私，請輸入密碼以繼續</p>
-                            
-                            <form onSubmit={handleLogin}>
-                                <input 
-                                    type="number" pattern="\d*" 
-                                    placeholder="輸入密碼..." 
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-lg mb-3 focus:ring-2 ring-pink-400 outline-none transition-all"
-                                    value={input}
-                                    onChange={(e) => {setInput(e.target.value); setErrorMsg("");}}
-                                    autoFocus
-                                />
-                                {errorMsg && <p className="text-red-500 text-sm mb-3 font-bold">{errorMsg}</p>}
-                                <button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 transition-all active:scale-95">
-                                    解鎖 🔓
-                                </button>
-                            </form>
-                            <p className="mt-6 text-xs text-gray-300">Meimei's Growth Record</p>
-                        </div>
-                    </div>
-                );
-            }
-
-            return <GrowthDashboard />;
-        };
-
-        const rootElement = document.getElementById("root");
-const root = ReactDOM.createRoot(rootElement);
-root.render(React.createElement(App));
+    const rootElement = document.getElementById("root");
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(React.createElement(App));
     </script>
 </body>
-
 </html>
+
 
 
 
