@@ -1026,38 +1026,33 @@ logScores={logDomainScores}
                         ))}
 
 
-{tab === 'journey' && journey.map((item,i)=>{
+{/* --- 人生時間軸分頁 --- */}
+                    {tab === 'journey' && journey.map((item, i) => (
+                        <div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 mb-4 ${item.type==='medical'?'border-blue-300':item.type==='travel'?'border-green-300':'border-purple-300'}`}>
+                            <div className="flex justify-between mb-1">
+                                <span className={`${T.small} text-gray-400`}>{item.date}</span>
+                                <span className={`${T.small} font-bold text-gray-500`}>
+                                    {item.type==='medical'?'🏥 醫療里程碑':item.type==='travel'?'✈️ 人生旅行':'📊 發展突破'}
+                                </span>
+                            </div>
+                            <h3 className={`${T.h3} font-bold text-gray-800`}>{item.title}</h3>
+                            <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{item.text}</p>
+                        </div>
+                    ))}
 
-const color={
-medical:'border-blue-300',
-travel:'border-green-300',
-dev:'border-purple-300'
-}
-
-const label={
-medical:'🏥 醫療里程碑',
-travel:'✈️ 人生旅行',
-dev:'📊 發展突破'
-}
-
-return(
-
-<div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 ${color[item.type]}`}>
-
-<div className="flex justify-between mb-1">
-
-<span className={`${T.small} text-gray-400`}>
-{item.date}
-</span>
-
-<span className={`${T.small} font-bold text-gray-500`}>
-{label[item.type]}
-</span>
-
-</div>
-
-<h3 className={`${T.h3} font-bold text-gray-800`}>
-{item.title}
+                    {/* --- Timeline 分頁 --- */}
+                    {tab === 'timeline' && timeline.map((item, i) => (
+                        <div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 mb-4 ${item.type==='log'?'border-pink-300':item.type==='medical'?'border-blue-300':item.type==='travel'?'border-green-300':'border-purple-300'}`}>
+                            <div className="flex justify-between mb-1">
+                                <span className={`${T.small} text-gray-400`}>{item.date}</span>
+                                <span className={`${T.small} font-bold text-gray-500`}>
+                                    {item.type==='log'?'📅 日常':item.type==='medical'?'🏥 醫療':item.type==='travel'?'✈️ 旅行':'📊 發展'}
+                                </span>
+                            </div>
+                            <h3 className={`${T.h3} font-bold text-gray-800`}>{item.title}</h3>
+                            {item.text && <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{item.text}</p>}
+                        </div>
+                    ))}
 </h3>
 
 <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>
@@ -1215,6 +1210,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
