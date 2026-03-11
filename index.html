@@ -835,22 +835,46 @@ t==='dev'? '📊 發展月報':
                             </>
                         )}
 
-                        {tab === 'travel' && data.travel.map((rec, i) => (
-                            <div key={i} className="bg-white p-4 rounded-2xl shadow-sm flex flex-col gap-2 border border-green-50">
-                                <div className="flex items-center gap-3">
-                                    <div className="text-xl bg-green-50 w-12 h-12 flex items-center justify-center rounded-full shadow-inner">{renderIcon(rec.icon, "text-green-600 w-6 h-6")}</div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between">
-                                            <h3 className={`${T.h3} font-bold text-gray-800`}>{rec.title}</h3>
-                                            <span className={`${T.small} text-gray-400`}>{rec.date}</span>
-                                        </div>
-                                        <div className={`${T.small} text-green-600`}>{rec.location}</div>
-                                        <p className={`${T.small} text-gray-400 mt-0.5`}>{rec.highlight}</p>
-                                    </div>
-                                </div>
-                                {rec.analysis && <div className={`mt-1 bg-green-50 p-2 rounded-lg ${T.small} text-green-800`}><span className="font-bold">🧠 發展意義：</span>{rec.analysis}</div>}
-                            </div>
-                        ))}
+  {tab === 'travel' && (
+    data.travel.map((rec, i) => (
+
+        <div key={i} className="bg-white p-4 rounded-2xl shadow-sm flex flex-col gap-2 border border-green-50">
+            <div className="flex items-center gap-3">
+                <div className="text-xl bg-green-50 w-12 h-12 flex items-center justify-center rounded-full shadow-inner">
+                    {renderIcon(rec.icon, "text-green-600 w-6 h-6")}
+                </div>
+
+                <div className="flex-1">
+                    <div className="flex justify-between">
+                        <h3 className={`${T.h3} font-bold text-gray-800`}>
+                            {rec.title}
+                        </h3>
+
+                        <span className={`${T.small} text-gray-400`}>
+                            {rec.date}
+                        </span>
+                    </div>
+
+                    <div className={`${T.small} text-green-600`}>
+                        {rec.location}
+                    </div>
+
+                    <p className={`${T.small} text-gray-400 mt-0.5`}>
+                        {rec.highlight}
+                    </p>
+                </div>
+            </div>
+
+            {rec.analysis && (
+                <div className={`mt-1 bg-green-50 p-2 rounded-lg ${T.small} text-green-800`}>
+                    <span className="font-bold">🧠 發展意義：</span>
+                    {rec.analysis}
+                </div>
+            )}
+        </div>
+
+    ))
+)}
 
 
 {tab === 'journey' && journey.map((item,i) => (
@@ -893,7 +917,9 @@ dev:'📊 發展突破'
 
 ))}
 
-{tab === 'timeline' && timeline.map((item,i) => (
+{tab === 'timeline' && timeline.map((item,i) => {
+
+return (
 
 <div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 ${
 {
@@ -933,7 +959,9 @@ dev:'📊 發展'
 
 </div>
 
-))}					
+)
+
+})}				
 
 {tab === 'log' && data.logs.map((log, i) => (
     <SmartLog
@@ -1036,6 +1064,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
