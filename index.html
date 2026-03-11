@@ -974,22 +974,18 @@ logScores={logDomainScores}
 />
 </div>
 {/* AI Personality Radar */}
-<div className="bg-white p-4 rounded-3xl shadow-sm border border-pink-100 mb-4">
+<div className="bg-white p-4 rounded-3xl shadow-sm border border-indigo-100 mb-4">
 
-<h3 className={`${T.small} font-bold text-pink-600 mb-2`}>
-AI Personality Radar
+<h3 className={`${T.small} font-bold text-indigo-600 mb-2`}>
+{/* AI 發展分析 */}
 </h3>
-<PersonalityRadar scores={personalityScores} />
 
-</div>
 <DevelopmentAnalysis
 data={data.development}
 logScores={logDomainScores}
 />
-	
-<DevelopmentRadar  data={data.development} logScores={logDomainScores} />
-<DevelopmentAnalysis data={data.development} logScores={logDomainScores} />
 
+</div>
 </div>
 
                                 {data.medical.map((rec, i) => (
@@ -1218,6 +1214,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
