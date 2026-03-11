@@ -1055,13 +1055,13 @@ logScores={logDomainScores}
                     ))}
 
 {tab === 'log' && data.logs.map((log, i) => (
-    <SmartLog
-        key={i}
-        log={log}
-        styles={T}
-        renderIcon={renderIcon}
-    />
-))}
+       <SmartLog
+           key={i}
+           log={log}
+          styles={T}
+          renderIcon={renderIcon}
+      />
+   ))}
                         
 {tab === 'dev' && (
     data.development.length > 0 ? (
@@ -1085,14 +1085,10 @@ logScores={logDomainScores}
 
             <div className="text-center text-[10px] text-gray-400 mt-6">
                 Designed for Meimei | 2026 DevReport
-       </div>
-</div>
-)
-)}
-</div>
-</div>
-);
-};
+ </div>
+                </div>
+            );
+        };
 
         // --- 🔒 新增：應用程式主入口 (負責鎖屏邏輯) ---
         const App = () => {
@@ -1156,6 +1152,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
