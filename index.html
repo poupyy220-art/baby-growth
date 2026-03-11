@@ -1026,8 +1026,7 @@ logScores={logDomainScores}
                         ))}
 
 
-{/* --- 人生時間軸分頁 --- */}
-                    {tab === 'journey' && journey.map((item, i) => (
+{tab === 'journey' && journey.map((item, i) => (
                         <div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 mb-4 ${item.type==='medical'?'border-blue-300':item.type==='travel'?'border-green-300':'border-purple-300'}`}>
                             <div className="flex justify-between mb-1">
                                 <span className={`${T.small} text-gray-400`}>{item.date}</span>
@@ -1040,7 +1039,6 @@ logScores={logDomainScores}
                         </div>
                     ))}
 
-{/* --- Timeline 分頁 --- */}
                     {tab === 'timeline' && timeline.map((item, i) => (
                         <div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 mb-4 ${item.type==='log'?'border-pink-300':item.type==='medical'?'border-blue-300':item.type==='travel'?'border-green-300':'border-purple-300'}`}>
                             <div className="flex justify-between mb-1">
@@ -1054,12 +1052,10 @@ logScores={logDomainScores}
                         </div>
                     ))}
 
-                    {/* --- 時光機日誌分頁 --- */}
                     {tab === 'log' && data.logs.map((log, i) => (
                         <SmartLog key={i} log={log} styles={T} renderIcon={renderIcon} />
                     ))}
 
-                    {/* --- 發展月報分頁 --- */}
                     {tab === 'dev' && (
                         data.development.length > 0 ? (
                             data.development.map((item, i) => (
@@ -1075,8 +1071,8 @@ logScores={logDomainScores}
                             </div>
                         )
                     )}
-                </div> {/* 結束 mt-4 的內容區域容器 */}
-            </div> {/* 結束 main container */}
+                </div>
+            </div>
         );
     };
 
@@ -1129,6 +1125,7 @@ logScores={logDomainScores}
     </script>
 </body>
 </html>
+
 
 
 
