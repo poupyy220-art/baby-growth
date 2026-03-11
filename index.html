@@ -557,47 +557,68 @@ return map;
 
 
 // ⭐ 在這裡新增
-// --- AI log domain scoring ---
+// --- AI log domain scoring (廣泛辨識升級版) ---
 const logDomainScores = useMemo(() => {
+    const scores = { gross_motor: 0, fine_motor: 0, language: 0, cognitive: 0, social: 0 };
 
-const scores = {
-gross_motor:0,
-fine_motor:0,
-language:0,
-cognitive:0,
-social:0
-};
+    (data.logs || []).forEach(log => {
+        // 1. 優先辨識：如果 CSV 已手動標記 domain，直接計分 (最精確)
+        if (log.domain && scores[log.domain] !== undefined) {
+            scores[log.domain] += 1;
+            return; 
+        }
 
-(data.logs || []).forEach(log => {
+        // 2. 次要辨識：廣泛掃描 Tag, 標題與紀錄內容
+        const combinedText = (
+            (log.tag || "") + " " + (log.title || "") + " " + (log.parent_text || "")
+        ).toLowerCase();
 
-const text = (log.title + " " + log.parent_text).toLowerCase();
+        // 粗大動作：涵蓋爬行、站立、走路、放電、攀爬
+        if (/粗大|大動作|走|跑|站|爬|梯|攀|移動|平衡|放電|刺激/.test(combinedText)) scores.gross_motor += 1;
 
-if(text.includes("走") || text.includes("跑") || text.includes("站")){
-scores.gross_motor += 1;
-}
+        // 精細動作：涵蓋抓握、捏取、翻書、操作、對準
+        if (/精細|抓|捏|轉|抽|拿|操作|拼圖|翻書|手|對準|積木|放入/.test(combinedText)) scores.fine_motor += 1;
 
-if(text.includes("翻書") || text.includes("抓") || text.includes("拼圖")){
-scores.fine_motor += 1;
-}
+        // 語言溝通：涵蓋發聲、叫人、模仿聲音、單字
+        if (/語言|溝通|叫|說|講|爸|媽|狗|語|詞|聲|回應|拜拜|指令/.test(combinedText)) scores.language += 1;
 
-if(text.includes("叫") || text.includes("說") || text.includes("爸爸") || text.includes("媽媽")){
-scores.language += 1;
-}
+        // 認知學習：涵蓋模仿、因果探索、發現、物體恆存
+        if (/認知|學習|模仿|理解|找|探索|因果|認得|發現|schema|注意/.test(combinedText)) scores.cognitive += 1;
 
-if(text.includes("模仿") || text.includes("理解") || text.includes("找")){
-scores.cognitive += 1;
-}
-
-if(text.includes("分享") || text.includes("指") || text.includes("互動")){
-scores.social += 1;
-}
-
-});
-
-return scores;
-
+        // 社會情緒：涵蓋分享、輪流、表情、依附、界線
+        if (/社交|社會|情緒|互動|分享|輪流|笑|抱|界線|依附|黏人|氣質/.test(combinedText)) scores.social += 1;
+    });
+    return scores;
 }, [data.logs]);			
-            
+// --- AI personality scoring (個性特質評分 - 基於標籤細分) ---
+const personalityScores = useMemo(() => {
+    const scores = { explorer: 0, communicator: 0, observer: 0, social: 0, builder: 0 };
+
+    (data.logs || []).forEach(log => {
+        const text = (
+            (log.tag || "") + " " + 
+            (log.title || "") + " " + 
+            (log.parent_text || "")
+        ).toLowerCase();
+
+        // Explorer (探險家)：包含新環境刺激、大動作探索與旅行放電
+        if (/探索|發現|研究|找|新環境|刺激|爬|走|跑|遠|放電/.test(text)) scores.explorer += 1;
+
+        // Communicator (溝通者)：包含模仿說話、發聲回應與拜拜
+        if (/叫|說|講|爸|媽|語|話|詞|仿聲|回應|拜拜|單字/.test(text)) scores.communicator += 1;
+
+        // Observer (觀察者)：包含視覺注意、驚嘆、眼神與社交參照
+        if (/看|注意|盯|觀察|參照|驚嘆|視覺|眼神/.test(text)) scores.observer += 1;
+
+        // Social (社交家)：包含分享、輪流、氣質與依附關係
+        if (/分享|給|一起|笑|互動|氣質|打招呼|黏人|依附|輪流/.test(text)) scores.social += 1;
+
+        // Builder (創造者)：包含精細操作、Schema 圖式、積木與因果探索
+        if (/拿|積木|拼|抓|捏|操作|因果|放入|schema|轉|建構/.test(text)) scores.builder += 1;
+    });
+    return scores;
+}, [data.logs]);    
+			
             const latestGrowthData = useMemo(() => {
                 if (!data.growth || data.growth.length === 0) return null;
                 const validRows = data.growth.filter(r => r.meimei !== null);
@@ -994,6 +1015,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
