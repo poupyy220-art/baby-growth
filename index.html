@@ -975,10 +975,13 @@ return (
             <div className="text-center py-10">
                 <div className="text-4xl mb-3">📊</div>
                 <p className="text-gray-400 text-sm">還沒有發展評估資料喔！<br/>請在 Development 分頁新增</p>
-            </div>
-        )}
-    </> /* 💡 關鍵 3: 這裡必須對應開頭的 Fragment 結束 */
-)}
+               </div>
+                     )}
+                </>
+	        )}
+	   </div>
+);
+};
         // --- 🔒 新增：應用程式主入口 (負責鎖屏邏輯) ---
         const App = () => {
             const [unlocked, setUnlocked] = useState(false);
@@ -1041,6 +1044,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
