@@ -321,6 +321,38 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
             </div>
         </div>
     );
+	}; // <--- 確保這在大括號在 PersonalityRadar 之前就關閉
+	// --- 個性特質雷達圖元件 ---
+const PersonalityRadar = ({ scores }) => {
+    if (!window.Recharts) return null;
+    const { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } = window.Recharts;
+    
+    const radarData = [
+        { subject: "探險家", value: scores.explorer || 0 },
+        { subject: "溝通者", value: scores.communicator || 0 },
+        { subject: "觀察者", value: scores.observer || 0 },
+        { subject: "社交家", value: scores.social || 0 },
+        { subject: "創造者", value: scores.builder || 0 }
+    ];
+
+    return (
+        <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={radarData}>
+                    <PolarGrid stroke="#e5e7eb" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 12 }} />
+                    <Radar
+                        name="個性特質"
+                        dataKey="value"
+                        stroke="#ec4899"
+                        fill="#ec4899"
+                        fillOpacity={0.5}
+                    />
+                </RadarChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
 };        const SmartLog = ({ log, styles, renderIcon }) => (
             <div className={`bg-white rounded-2xl p-5 shadow-sm border-l-4 border-pink-300 mb-4 transition-all hover:shadow-md`}>
                 <div className="flex justify-between items-start mb-2">
@@ -920,6 +952,15 @@ return (
 ))}
                         
                         {tab === 'dev' && (
+	{/* 顯示個性特質分析圖卡片 */}
+<div className="bg-white p-5 rounded-3xl shadow-sm border border-pink-100 mb-6 text-center">
+    <h3 className={`${T.small} font-bold text-pink-700 mb-2`}>✨ 妹妹個性特質分析</h3>
+    {/* 💡 呼叫剛剛定義的繪圖零件 */}
+    <PersonalityRadar scores={personalityScores} />
+    <div className="mt-2 p-3 bg-pink-50 rounded-2xl border border-pink-100 text-[10px] text-pink-800 italic leading-relaxed text-left">
+        分析說明：此圖表根據你日記中的 <b>Schema (圖式)</b>、<b>因果探索</b> 與 <b>社交氣質</b> 標籤自動加權生成。
+    </div>
+</div>
                             data.development.length > 0 ? (
                                 data.development.map((item, i) =>
 <DevelopmentCard
@@ -1006,6 +1047,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
