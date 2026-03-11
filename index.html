@@ -951,18 +951,18 @@ return (
     />
 ))}
                         
-                        {tab === 'dev' && (
-	{/* 顯示個性特質分析圖卡片 */}
-<div className="bg-white p-5 rounded-3xl shadow-sm border border-pink-100 mb-6 text-center">
-    <h3 className={`${T.small} font-bold text-pink-700 mb-2`}>✨ 妹妹個性特質分析</h3>
-    {/* 💡 呼叫剛剛定義的繪圖零件 */}
-    <PersonalityRadar scores={personalityScores} />
-    <div className="mt-2 p-3 bg-pink-50 rounded-2xl border border-pink-100 text-[10px] text-pink-800 italic leading-relaxed text-left">
-        分析說明：此圖表根據你日記中的 <b>Schema (圖式)</b>、<b>因果探索</b> 與 <b>社交氣質</b> 標籤自動加權生成。
-    </div>
-</div>
-                            data.development.length > 0 ? (
-                                data.development.map((item, i) =>
+ {tab === 'dev' && (
+      /* 這裡開始回傳 HTML 區塊 */
+      <div className="bg-white p-5 rounded-3xl shadow-sm border border-pink-100 mb-6 text-center">
+          <h3 className={`${T.small} font-bold text-pink-700 mb-2`}>✨ 妹妹個性特質分析</h3>
+          <PersonalityRadar scores={personalityScores} />
+          <div className="mt-2 p-3 bg-pink-50 rounded-2xl border border-pink-100 text-[10px] text-pink-800 italic leading-relaxed">
+              分析說明：此圖表根據你日記中的 <b>Schema (圖式)</b>、<b>因果探索</b> 與 <b>社交氣質</b> 標籤自動加權生成。
+          </div>
+      </div>
+     )}
+      {data.development.length > 0 ? (  /* 💡 這裡！前面要多補一個左大括號 { */
+         data.development.map((item, i) => (
 <DevelopmentCard
 key={i}
 item={item}
@@ -1047,6 +1047,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
