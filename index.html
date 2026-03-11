@@ -1083,19 +1083,17 @@ logScores={logDomainScores}
                                         還沒有發展評估資料喔！<br/>請在 Development 分頁新增
                                     </p>
                                 </div>
-                                <div className="text-center text-[10px] text-gray-400 mt-6">
-                                    Designed for Meimei | 2026 DevReport
-                                </div>
-                            </div>
-                        )
-                    )}
-                </div> {/* 關閉內容區域容器 */}
-            </div> 
-        ); // 結束 GrowthDashboard 的 return
-    }; // 結束 GrowthDashboard 組件
-
-    // --- 🔒 應用程式主入口 (負責鎖屏邏輯) ---
-    const App = () => {
+ <div className="text-center text-[10px] text-gray-400 mt-6">
+                            Designed for Meimei | 2026 DevReport
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};      
+// --- 🔒 應用程式主入口 (負責鎖屏邏輯) ---
+const App = () => {
         const [unlocked, setUnlocked] = useState(false);
         const [input, setInput] = useState("");
         const [errorMsg, setErrorMsg] = useState("");
@@ -1154,6 +1152,7 @@ logScores={logDomainScores}
     </script>
 </body>
 </html>
+
 
 
 
