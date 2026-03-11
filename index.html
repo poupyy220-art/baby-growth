@@ -1040,7 +1040,7 @@ logScores={logDomainScores}
                         </div>
                     ))}
 
-                    {/* --- Timeline 分頁 --- */}
+{/* --- Timeline 分頁 --- */}
                     {tab === 'timeline' && timeline.map((item, i) => (
                         <div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 mb-4 ${item.type==='log'?'border-pink-300':item.type==='medical'?'border-blue-300':item.type==='travel'?'border-green-300':'border-purple-300'}`}>
                             <div className="flex justify-between mb-1">
@@ -1054,50 +1054,40 @@ logScores={logDomainScores}
                         </div>
                     ))}
 
-{tab === 'log' && data.logs.map((log, i) => (
-       <SmartLog
-           key={i}
-           log={log}
-          styles={T}
-          renderIcon={renderIcon}
-      />
-   ))}
-                        
-// --- 這是修正後的 Dev 分頁與 App 入口 ---
+                    {/* --- 時光機日誌分頁 --- */}
+                    {tab === 'log' && data.logs.map((log, i) => (
+                        <SmartLog key={i} log={log} styles={T} renderIcon={renderIcon} />
+                    ))}
+
+                    {/* --- 發展月報分頁 --- */}
                     {tab === 'dev' && (
                         data.development.length > 0 ? (
                             data.development.map((item, i) => (
-                                <DevelopmentCard
-                                    key={i}
-                                    item={item}
-                                    styles={T}
-                                    renderIcon={renderIcon}
-                                    milestoneMap={milestoneMap}
-                                />
+                                <DevelopmentCard key={i} item={item} styles={T} renderIcon={renderIcon} milestoneMap={milestoneMap} />
                             ))
                         ) : (
                             <div>
                                 <div className="text-center py-10">
                                     <div className="text-4xl mb-3">📊</div>
-                                    <p className="text-gray-400 text-sm">
-                                        還沒有發展評估資料喔！<br/>請在 Development 分頁新增
-                                    </p>
-                        </div> {/* 1. 關閉 "Designed for Meimei" 上方的內容容器 */}
-                )} {/* 2. 結束 tab === 'dev' 的判斷括號 */}
-            </div> {/* 3. 關閉第 984 行開啟的內容區域 mt-4 */}
-        </div> {/* 4. 關閉第 968 行開啟的最外層主容器 container */}
-    ); // 5. 結束 GrowthDashboard 的 return 括號
-}; // 6. 結束 GrowthDashboard 組件定義
-// --- 🔒 應用程式主入口 (負責鎖屏邏輯) ---
-const App = () => {
+                                    <p className="text-gray-400 text-sm">還沒有發展評估資料喔！<br/>請在 Development 分頁新增</p>
+                                </div>
+                                <div className="text-center text-[10px] text-gray-400 mt-6">Designed for Meimei | 2026 DevReport</div>
+                            </div>
+                        )
+                    )}
+                </div> {/* 結束 mt-4 的內容區域容器 */}
+            </div> {/* 結束 main container */}
+        );
+    };
+
+    // --- 🔒 應用程式主入口 (負責鎖屏邏輯) ---
+    const App = () => {
         const [unlocked, setUnlocked] = useState(false);
         const [input, setInput] = useState("");
         const [errorMsg, setErrorMsg] = useState("");
 
         useEffect(() => {
-            if(localStorage.getItem('mm_unlocked') === 'true') {
-                setUnlocked(true);
-            }
+            if(localStorage.getItem('mm_unlocked') === 'true') { setUnlocked(true); }
         }, []);
 
         const handleLogin = (e) => {
@@ -1118,36 +1108,28 @@ const App = () => {
                         <div className="bg-pink-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">🔒</div>
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">請輸入通關密碼</h2>
                         <p className="text-gray-400 text-sm mb-6">為了保護隱私，請輸入密碼以繼續</p>
-                        
                         <form onSubmit={handleLogin}>
                             <input 
-                                type="number" pattern="\d*" 
-                                placeholder="輸入密碼..." 
+                                type="number" pattern="\d*" placeholder="輸入密碼..." 
                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-lg mb-3 focus:ring-2 ring-pink-400 outline-none transition-all"
-                                value={input}
-                                onChange={(e) => {setInput(e.target.value); setErrorMsg("");}}
-                                autoFocus
+                                value={input} onChange={(e) => {setInput(e.target.value); setErrorMsg("");}} autoFocus
                             />
                             {errorMsg && <p className="text-red-500 text-sm mb-3 font-bold">{errorMsg}</p>}
-                            <button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 transition-all active:scale-95">
-                                解鎖 🔓
-                            </button>
+                            <button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 transition-all active:scale-95">解鎖 🔓</button>
                         </form>
-                        <p className="mt-6 text-xs text-gray-300">Meimei's Growth Record</p>
                     </div>
                 </div>
             );
         }
-
         return <GrowthDashboard />;
     };
-
     const rootElement = document.getElementById("root");
     const root = ReactDOM.createRoot(rootElement);
     root.render(React.createElement(App));
     </script>
 </body>
 </html>
+
 
 
 
