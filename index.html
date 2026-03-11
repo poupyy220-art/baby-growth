@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>妹妹成長紀錄 v22.0 (Secure)</title>
+    <title>妹妹成長紀錄 v23.0 (Secure)</title>
     
     <meta name="apple-mobile-web-app-title" content="妹妹紀錄">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -229,7 +229,7 @@ scores[d.domain] += weight;
 
 // 加入 logs 行為分數
 Object.keys(scores).forEach(k => {
-scores[k] += (logScores?.[k] || 0);
+scores[k] += (logScores?.[k] || 0) * 0.5;
 });	
 
 // 轉成 RadarChart 格式
@@ -619,15 +619,59 @@ text.includes("拿起")
 scores.fine_motor += 1;
 }
 
-if(text.includes("叫") || text.includes("說") || text.includes("爸爸") || text.includes("媽媽")){
+if(
+text.includes("狗狗") ||
+text.includes("叫") ||
+text.includes("說") ||
+text.includes("講") ||
+text.includes("爸爸") ||
+text.includes("媽媽") ||
+text.includes("阿嬤") ||
+text.includes("阿公") ||
+text.includes("學說") ||
+text.includes("模仿說") ||
+text.includes("發音") ||
+text.includes("講話") ||
+text.includes("回應") ||
+text.includes("回答") ||
+text.includes("指") ||
+text.includes("看") ||
+text.includes("聽") ||
+text.includes("叫我") ||
+text.includes("喊")
+){
 scores.language += 1;
 }
 
-if(text.includes("模仿") || text.includes("理解") || text.includes("找")){
+if(
+text.includes("模仿") ||
+text.includes("理解") ||
+text.includes("找") ||
+text.includes("知道") ||
+text.includes("記得") ||
+text.includes("探索") ||
+text.includes("發現") ||
+text.includes("學會") ||
+text.includes("看") ||
+text.includes("注意") ||
+text.includes("嘗試")
+){
 scores.cognitive += 1;
 }
 
-if(text.includes("分享") || text.includes("指") || text.includes("互動")){
+if(
+text.includes("分享") ||
+text.includes("指") ||
+text.includes("互動") ||
+text.includes("看") ||
+text.includes("笑") ||
+text.includes("抱") ||
+text.includes("找媽媽") ||
+text.includes("找爸爸") ||
+text.includes("一起") ||
+text.includes("給") ||
+text.includes("拍手")
+){
 scores.social += 1;
 }
 
@@ -1039,6 +1083,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
