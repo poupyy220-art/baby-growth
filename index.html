@@ -407,20 +407,16 @@ return(
 <div className={styles.body}>	
 {item.analysis}
 </div>
-
 </div>
 
-<div className="bg-purple-50 p-3 rounded-xl mb-3">
-
-<div className={styles.small + " text-purple-600 font-bold"}>
-引導方式
-</div>
-
-<div className={styles.body}>
-{item.suggestion}
-</div>
-
-</div>
+            <div className="bg-purple-50 p-3 rounded-xl mb-3">
+                <div className={styles.small + " text-purple-600 font-bold"}>
+                    引導方式
+                </div>
+                <div className={styles.body}>
+                    {item.suggestion}
+                </div>
+            </div>
 
             <div className={styles.body}>
                 {item.next_stage 
@@ -431,7 +427,6 @@ return(
         </div>
     );
 };
-
         // --- 主要 Dashboard ---
         const GrowthDashboard = () => {
             const [tab, setTab] = useState('journey');
@@ -998,6 +993,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
