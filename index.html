@@ -680,6 +680,81 @@ scores.social += 1;
 return scores;
 
 }, [data.logs]);			
+			// --- AI personality scoring ---
+const personalityScores = useMemo(() => {
+
+const scores = {
+explorer:0,
+communicator:0,
+observer:0,
+social:0,
+builder:0
+};
+
+(data.logs || []).forEach(log => {
+
+const text = ((log.title || "") + " " + (log.parent_text || "")).toLowerCase();
+
+// Explorer
+if(
+text.includes("探索") ||
+text.includes("發現") ||
+text.includes("研究") ||
+text.includes("玩") ||
+text.includes("找")
+){
+scores.explorer += 1;
+}
+
+// Communicator
+if(
+text.includes("叫") ||
+text.includes("說") ||
+text.includes("講") ||
+text.includes("爸爸") ||
+text.includes("媽媽") ||
+text.includes("學說")
+){
+scores.communicator += 1;
+}
+
+// Observer
+if(
+text.includes("看") ||
+text.includes("注意") ||
+text.includes("盯") ||
+text.includes("觀察")
+){
+scores.observer += 1;
+}
+
+// Social
+if(
+text.includes("分享") ||
+text.includes("給") ||
+text.includes("一起") ||
+text.includes("笑") ||
+text.includes("互動")
+){
+scores.social += 1;
+}
+
+// Builder
+if(
+text.includes("拿") ||
+text.includes("積木") ||
+text.includes("拼") ||
+text.includes("抓") ||
+text.includes("翻")
+){
+scores.builder += 1;
+}
+
+});
+
+return scores;
+
+}, [data.logs]);
             
             const latestGrowthData = useMemo(() => {
                 if (!data.growth || data.growth.length === 0) return null;
@@ -1083,6 +1158,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
