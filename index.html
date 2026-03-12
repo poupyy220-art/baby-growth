@@ -877,91 +877,79 @@ t==='dev'? '📊 發展月報':
 )}
 
 
-{tab === 'journey' && journey.map((item,i) => (
+{tab === 'journey' && journey.map((item, i) => (
+    <div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 ${
+        {
+            medical: 'border-blue-300',
+            travel: 'border-green-300',
+            dev: 'border-purple-300'
+        }[item.type] || ''
+    }`}>
+        <div className="flex justify-between mb-1">
+            <span className={`${T.small} text-gray-400`}>
+                {item.date}
+            </span>
 
-<div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 ${
-{
-medical:'border-blue-300',
-travel:'border-green-300',
-dev:'border-purple-300'
-}[item.type]
-}`}>
+            <span className={`${T.small} font-bold text-gray-500`}>
+                {
+                    {
+                        medical: '🏥 醫療里程碑',
+                        travel: '✈️ 人生旅行',
+                        dev: '📊 發展突破'
+                    }[item.type] || ''
+                } 
+            </span>
+        </div>
 
-<div className="flex justify-between mb-1">
+        <h3 className={`${T.h3} font-bold text-gray-800`}>
+            {item.title}
+        </h3>
 
-<span className={`${T.small} text-gray-400`}>
-{item.date}
-</span>
-
-<span className={`${T.small} font-bold text-gray-500`}>
-{
-{
-medical:'🏥 醫療里程碑',
-travel:'✈️ 人生旅行',
-dev:'📊 發展突破'
-}[item.type]
-}
-</span>
-
-</div>
-
-<h3 className={`${T.h3} font-bold text-gray-800`}>
-{item.title}
-</h3>
-
-<p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>
-{item.text}
-</p>
-
-</div>
-
+        <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>
+            {item.text}
+        </p>
+    </div>
 ))}
 
-{tab === 'timeline' && timeline.map((item,i) => {
+{tab === 'timeline' && timeline.map((item, i) => {
+    return (
+        <div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 ${
+            {
+                log: 'border-pink-300',
+                medical: 'border-blue-300',
+                travel: 'border-green-300',
+                dev: 'border-purple-300'
+            }[item.type] || ''
+        }`}>
+            <div className="flex justify-between mb-1">
+                <span className={`${T.small} text-gray-400`}>
+                    {item.date}
+                </span>
 
-return (
+                <span className={`${T.small} font-bold text-gray-500`}>
+                    {
+                        {
+                            log: '📅 日常',
+                            medical: '🏥 醫療',
+                            travel: '✈️ 旅行',
+                            dev: '📊 發展'
+                        }[item.type] || ''
+                    }
+                </span>
+            </div>
 
-<div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 ${
-{
-log:'border-pink-300',
-medical:'border-blue-300',
-travel:'border-green-300',
-dev:'border-purple-300'
-}[item.type]
-}`}>
+            <h3 className={`${T.h3} font-bold text-gray-800`}>
+                {item.title}
+            </h3>
 
-<div className="flex justify-between mb-1">
-<span className={`${T.small} text-gray-400`}>
-{item.date}
-</span>
-
-<span className={`${T.small} font-bold text-gray-500`}>
-{
-{
-log:'📅 日常',
-medical:'🏥 醫療',
-travel:'✈️ 旅行',
-dev:'📊 發展'
-}[item.type]
-}
-</span>
-</div>
-
-<h3 className={`${T.h3} font-bold text-gray-800`}>
-{item.title}
-</h3>
-
-{item.text && (
-<p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>
-{item.text}
-</p>
-)}
-
-</div>
-
-)
-
-})}				
+            {item.text && (
+                <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>
+                    {item.text}
+                </p>
+            )}
+        </div>
+    );
+})}			
 
 {tab === 'log' && data.logs.map((log, i) => (
     <SmartLog
@@ -1001,8 +989,7 @@ dev:'📊 發展'
                     )}
                 </div>
             );
-        };
-					
+        };				
         // --- 🔒 新增：應用程式主入口 (負責鎖屏邏輯) ---
         const App = () => {
             const [unlocked, setUnlocked] = useState(false);
@@ -1065,6 +1052,7 @@ root.render(React.createElement(App));
 </body>
 
 </html>
+
 
 
 
