@@ -7,7 +7,17 @@
     
     <meta name="apple-mobile-web-app-title" content="妹妹紀錄">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff1f2">
+
+    <script>
+        window.addEventListener('error', function(e) {
+            console.error('Global error caught:', e.message, e.filename, e.lineno);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+        });
+    </script>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -51,11 +61,7 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
-       const Recharts = window.Recharts || {};
-
-if (!Recharts) {
-  document.getElementById("root").innerHTML = "Recharts failed to load";
-}
+        const Recharts = window.Recharts || {};
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
 
         // --- 設定與常數 ---
@@ -476,15 +482,18 @@ milestones: []
                 container: "max-w-md md:max-w-2xl", h1: "text-xl", h3: "text-base", body: "text-sm", small: "text-xs", iconSize: "w-4 h-4", iconVal: 16
             }, [largeText]);
 
-            const fetchCSV = (url) => {
-                return new Promise((resolve) => {
-                    if (!url) { resolve([]); return; }
-                    Papa.parse(url, {
-                        download: true, header: true, skipEmptyLines: true,
-                        complete: (results) => resolve(results.data),
-                        error: (err) => { console.error("CSV Error:", err); resolve([]); }
-                    });
-                });
+            const fetchCSV = async (url) => {
+                if (!url) return [];
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    const text = await res.text();
+                    const result = Papa.parse(text, { header: true, skipEmptyLines: true });
+                    return result.data || [];
+                } catch (err) {
+                    console.error("CSV fetch error:", err);
+                    return [];
+                }
             };
 
             useEffect(() => {
@@ -1004,11 +1013,10 @@ t==='dev'? '📊 發展月報':
                 }
             }, []);
 
-            const handleLogin = (e) => {
-                e.preventDefault();
+            const handleLogin = () => {
                 if (input === PASSCODE) {
                     setUnlocked(true);
-                    localStorage.setItem('mm_unlocked', 'true'); // 記住登入狀態
+                    localStorage.setItem('mm_unlocked', 'true');
                 } else {
                     setErrorMsg("密碼錯誤，請試試妹妹生日");
                     setInput("");
@@ -1023,20 +1031,21 @@ t==='dev'? '📊 發展月報':
                             <h2 className="text-2xl font-bold text-gray-800 mb-2">請輸入通關密碼</h2>
                             <p className="text-gray-400 text-sm mb-6">為了保護隱私，請輸入密碼以繼續</p>
                             
-                            <form onSubmit={handleLogin}>
+                            <div>
                                 <input 
                                     type="number" pattern="\d*" 
                                     placeholder="輸入密碼..." 
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-lg mb-3 focus:ring-2 ring-pink-400 outline-none transition-all"
                                     value={input}
                                     onChange={(e) => {setInput(e.target.value); setErrorMsg("");}}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
                                     autoFocus
                                 />
                                 {errorMsg && <p className="text-red-500 text-sm mb-3 font-bold">{errorMsg}</p>}
-                                <button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 transition-all active:scale-95">
+                                <button onClick={handleLogin} className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 transition-all active:scale-95">
                                     解鎖 🔓
                                 </button>
-                            </form>
+                            </div>
                             <p className="mt-6 text-xs text-gray-300">Meimei's Growth Record</p>
                         </div>
                     </div>
@@ -1047,8 +1056,8 @@ t==='dev'? '📊 發展月報':
         };
 
         const rootElement = document.getElementById("root");
-const root = ReactDOM.createRoot(rootElement);
-root.render(React.createElement(App));
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
     </script>
 </body>
 
