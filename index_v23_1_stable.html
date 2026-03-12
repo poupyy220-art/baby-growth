@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>妹妹成長紀錄 v23.0 (Secure)</title>
+    
+    <meta name="apple-mobile-web-app-title" content="妹妹紀錄">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#fff1f2">
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
+	
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fff1f2;
+            background-image: radial-gradient(#fecdd3 1px, transparent 1px);
+            background-size: 20px 20px;
+            padding-bottom: 80px;
+            touch-action: manipulation; 
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 載入動畫 (改為只在 dashboard 內部使用，或移除全域 loader 以免擋住鎖屏) */
+        .spinner { font-size: 3rem; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        
+        .tab-btn-active { background-color: #ec4899; color: white; box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.4); }
+        .tab-btn-inactive { background-color: white; color: #6b7280; border: 1px solid #f3f4f6; }
+        
+        /* 鎖屏輸入框特效 */
+        .lock-input:focus { outline: none; border-color: #ec4899; box-shadow: 0 0 0 2px #ec4899; }
+    </style>
+</head>
+<body>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+       const Recharts = window.Recharts || {};
+
+if (!Recharts) {
+  document.getElementById("root").innerHTML = "Recharts failed to load";
+}
+        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
+
+        // --- 設定與常數 ---
+        const SHEET_URLS = {
+            growth:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=0&single=true&output=csv",
+            medical: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=326886357&single=true&output=csv",
+            travel:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=2140673283&single=true&output=csv",
+            logs:    "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=491644359&single=true&output=csv",
+            development: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=248325933&single=true&output=csv",
+			milestones: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=593137954&single=true&output=csv"
+        };
+        const BIRTH_DATE = new Date(2024, 11, 26); 
+        
+        // 🔑 設定密碼 (如果要改密碼改這裡)
+        const PASSCODE = "20241226"; 
+
+        // --- Helper Functions ---
+        const parseDate = (dateStr) => {
+            if (!dateStr) return new Date(0);
+            try {
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) return new Date(parts[0], parts[1] - 1, parts[2]);
+                }
+                return new Date(dateStr);
+            } catch (e) { return new Date(0); }
+        };
+
+      const calculateAge = () => {
+    const today = new Date();
+
+    let years = today.getFullYear() - BIRTH_DATE.getFullYear();
+    let months = today.getMonth() - BIRTH_DATE.getMonth();
+    let days = today.getDate() - BIRTH_DATE.getDate();
+
+    if (days < 0) {
+        months--;
+        const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        days += prevMonth.getDate();
+    }
+
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    return `${years}Y ${months}M ${days}D`;
+};
+
+// 👇 在這裡新增
+const calculateDays = () => {
+    const today = new Date();
+    const diff = today - BIRTH_DATE;
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+};
+
+const calculateBirthdayCountdown = () => {
+    const today = new Date();
+    let nextBirthday = new Date(today.getFullYear(), BIRTH_DATE.getMonth(), BIRTH_DATE.getDate());
+
+    if (today > nextBirthday) {
+        nextBirthday = new Date(today.getFullYear() + 1, BIRTH_DATE.getMonth(), BIRTH_DATE.getDate());
+    }
+
+    const diff = nextBirthday - today;
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+};
+
+const calculateProgress = () => {
+    const today = new Date();
+    const secondBirthday = new Date(BIRTH_DATE.getFullYear() + 2, BIRTH_DATE.getMonth(), BIRTH_DATE.getDate());
+    const total = secondBirthday - BIRTH_DATE;
+    const current = today - BIRTH_DATE;
+    const percent = Math.min(100, Math.max(0, Math.round((current / total) * 100)));
+    return percent;
+};
+
+        // --- Icons ---
+        const IconBase = ({ children, color = "currentColor", size, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const IconPaths = {
+            Baby: <><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/></>,
+            Ruler: <><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></>,
+            Plane: <><path d="M2 12h5"/><path d="M13 12h8"/><path d="M4 17.5c2.5-3 5.5-6.5 10-6.5 2.5 0 5 .5 6.5 1.5 1.5 1 2 2.5 2 4s-1.5 3-4 3c-3 0-5.5-1-8-3"/><path d="M16 11V3L8 8"/></>,
+            Music: <><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></>,
+            MapPin: <><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></>,
+            Heart: <><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>,
+            Smile: <><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></>,
+            Star: <><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></>,
+            Cookie: <><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/></>,
+            Cat: <><path d="M12 5c2.97 0 5.4 2.22 5.88 5.11C19.27 10.15 21 11.23 21 13c0 1.93-1.57 3.5-3.5 3.5h-11C4.57 16.5 3 14.93 3 13c0-1.77 1.73-2.85 3.12-2.89C6.6 7.22 9.03 5 12 5z"/><path d="M16 5V3"/><path d="M8 5V3"/></>,
+            Zap: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
+            Eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
+            Activity: <><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></>,
+            CloudSun: <><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></>,
+            Save: <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>,
+            Bot: <><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></>,
+            BookOpen: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+            Brain: <><path d="M9.5 4.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-2.5 2.5M12 7v.5M12 21v-2M12 11.5v3M5.5 8.5v.5M18.5 8.5v.5M5.5 15.5v-.5M18.5 15.5v-.5"/></>,
+            Puzzle: <><path d="M19.439 15.424a1 1 0 0 0-1.025.98c0 1.37-1.295 2.52-2.914 2.596v-1.932a3.923 3.923 0 0 0 2.215-3.535 3.923 3.923 0 0 0-3.606-3.896V7.48c1.619.075 2.914 1.226 2.914 2.597a1 1 0 1 0 2 0c0-2.456-2.28-4.46-5.122-4.582V4.5a2.5 2.5 0 0 0-5 0v.995c-2.842.122-5.122 2.126-5.122 4.582a1 1 0 1 0 2 0c0-1.371 1.296-2.522 2.915-2.597v2.157a3.923 3.923 0 0 0-3.607 3.896 3.923 3.923 0 0 0 2.215 3.535v1.932c-1.619-.076-2.915-1.226-2.915-2.596a1 1 0 1 0-2 0c0 2.456 2.28 4.46 5.122 4.582v1a2.5 2.5 0 0 0 5 0v-1c2.842-.122 5.122-2.126 5.122-4.582a1 1 0 0 0-1.217-.98z"/></>,
+            Clipboard: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></>,
+            Aa: <><path d="M4 20h16"/><path d="m12 4-6 12"/><path d="m12 4 6 12"/><line x1="8" x2="16" y1="13" y2="13"/></>,
+            Lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>
+        };
+        const Icons = Object.keys(IconPaths).reduce((acc, k) => { acc[k] = (p) => <IconBase {...p}>{IconPaths[k]}</IconBase>; return acc; }, {});
+
+        // --- 元件 ---
+        const SafeChart = ({ data }) => {
+            if (!window.Recharts || !data || data.length === 0) return <div className="text-center text-xs text-gray-400 py-8">暫無數據</div>;
+            return (
+                <div className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={data} margin={{top:10, right:10, left:-20, bottom:0}}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0"/>
+                            <XAxis dataKey="month" tick={{fontSize:12, fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
+                            <YAxis domain={[2,10]} tick={{fontSize:12, fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
+                            <Tooltip contentStyle={{borderRadius:'10px', fontSize:'14px'}}/>
+                            <Line type="monotone" dataKey="who50" stroke="#93c5fd" strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="who15" stroke="#fca5a5" strokeWidth={2} dot={false} />
+                            <Line connectNulls type="monotone" dataKey="meimei" stroke="#ec4899" strokeWidth={3} dot={{r:4}} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            );
+        };
+
+
+// --- 發展雷達 ---
+const DevelopmentRadar = ({ data, logScores }) => {
+
+if (!Recharts || !Recharts.RadarChart) return null;
+
+const {
+RadarChart,
+Radar,
+PolarGrid,
+PolarAngleAxis,
+PolarRadiusAxis,
+ResponsiveContainer
+} = Recharts;
+
+
+// 計算各領域分數
+const scores = {
+gross_motor:0,
+fine_motor:0,
+language:0,
+cognitive:0,
+social:0
+};
+
+(data || []).forEach(d => {
+
+let weight = 0;
+
+if(d.stage === "achieved") weight = 2;
+if(d.stage === "emerging") weight = 1;
+
+if(scores[d.domain] !== undefined){
+scores[d.domain] += weight;
+}
+
+});
+
+// 加入 logs 行為分數
+Object.keys(scores).forEach(k => {
+scores[k] += ((logScores && logScores[k]) || 0);
+});	
+
+// 轉成 RadarChart 格式
+const radarData = [
+{subject:"大動作",value:scores.gross_motor},
+{subject:"精細動作",value:scores.fine_motor},
+{subject:"語言",value:scores.language},
+{subject:"認知",value:scores.cognitive},
+{subject:"社交",value:scores.social}
+];
+return (
+
+<div className="h-[260px] w-full">
+
+<ResponsiveContainer width="100%" height="100%">
+
+<RadarChart data={radarData}>
+
+<PolarGrid />
+
+<PolarAngleAxis dataKey="subject" />
+
+<PolarRadiusAxis />
+
+<Radar
+dataKey="value"
+stroke="#8b5cf6"
+fill="#8b5cf6"
+fillOpacity={0.4}
+/>
+
+</RadarChart>
+
+</ResponsiveContainer>
+
+</div>
+
+);
+};
+
+const DevelopmentAnalysis = ({ data, logScores }) => {
+    // 建立基礎分數表
+    const scores = {
+        gross_motor: 0,
+        fine_motor: 0,
+        language: 0,
+        cognitive: 0,
+        social: 0
+    };
+
+    // 1. 計算正式發展評估的分數 (Development 分頁)
+    (data || []).forEach(d => {
+        let weight = 0;
+        if(d.stage === "achieved") weight = 2;
+        if(d.stage === "emerging") weight = 1;
+        if(scores[d.domain] !== undefined) {
+            scores[d.domain] += weight;
+        }
+    });
+
+    // 2. 💡 重要修正：同步納入日記 (Logs) 的廣泛辨識分數
+    Object.keys(scores).forEach(k => {
+        scores[k] += ((logScores && logScores[k]) || 0);
+    });
+
+    const domainName = {
+        gross_motor: "大動作",
+        fine_motor: "精細動作",
+        language: "語言",
+        cognitive: "認知",
+        social: "社交"
+    };
+
+    // 排序找出最強與最需加強的領域
+    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+
+    // 防止初始無資料時崩潰
+    if (!sorted || sorted.length === 0 || sorted[0][1] === 0) {
+        return null;
+    }
+
+    const strongest = sorted[0];
+    const weakest = sorted[sorted.length - 1];
+
+    return (
+        <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 mt-4 shadow-sm">
+            <h3 className="font-bold text-indigo-700 mb-2 flex items-center gap-1">
+                📊 發展深度分析
+            </h3>
+            <div className="text-sm text-gray-700 mb-2">
+                目前主導型態：<b className="text-indigo-900">{domainName[strongest[0]]}型發展</b>
+            </div>
+            <div className="text-sm text-gray-600 italic border-t border-indigo-100 pt-2 mt-2">
+                💡 建議引導：目前的紀錄中 <b className="text-pink-600">{domainName[weakest[0]]}</b> 的相關活動較少，可參考里程碑清單增加互動刺激。
+            </div>
+        </div>
+    );
+	}; // <--- 確保這在大括號在 PersonalityRadar 之前就關閉
+	// --- 個性特質雷達圖元件 ---
+const PersonalityRadar = ({ scores }) => {
+    if (!Recharts || !Recharts.RadarChart) return null;
+    const { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } = Recharts;
+    
+    const radarData = [
+        { subject: "探險家", value: scores.explorer || 0 },
+        { subject: "溝通者", value: scores.communicator || 0 },
+        { subject: "觀察者", value: scores.observer || 0 },
+        { subject: "社交家", value: scores.social || 0 },
+        { subject: "創造者", value: scores.builder || 0 }
+    ];
+
+    return (
+        <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={radarData}>
+                    <PolarGrid stroke="#e5e7eb" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 12 }} />
+                    <Radar
+                        name="個性特質"
+                        dataKey="value"
+                        stroke="#ec4899"
+                        fill="#ec4899"
+                        fillOpacity={0.5}
+                    />
+                </RadarChart>
+            </ResponsiveContainer>
+        </div>
+    );
+
+};        const SmartLog = ({ log, styles, renderIcon }) => (
+            <div className={`bg-white rounded-2xl p-5 shadow-sm border-l-4 border-pink-300 mb-4 transition-all hover:shadow-md`}>
+                <div className="flex justify-between items-start mb-2">
+                    <span className={`${styles.small} bg-pink-50 text-pink-600 px-2 py-1 rounded-full font-mono font-bold tracking-wide`}>{log.date}</span>
+                    <span className={`${styles.small} text-indigo-500 flex items-center gap-1 font-bold bg-indigo-50 px-2 py-1 rounded-full`}>{renderIcon('Bot', `${styles.iconSize}`)} {log.tag}</span>
+                </div>
+                <h3 className={`${styles.h3} font-bold text-gray-800 mb-3`}>{log.title}</h3>
+                <div className="bg-gray-50 p-4 rounded-xl mb-3 border border-gray-100">
+                     <div className={`${styles.small} font-bold text-gray-400 mb-1 flex items-center gap-1`}>{renderIcon('Eye', "text-gray-400")} 家長觀察</div>
+                     <div className={`${styles.body} text-gray-700 leading-relaxed whitespace-pre-line`}>{log.parent_text}</div>
+                </div>
+                {log.ai_text && (
+                    <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 relative overflow-hidden mb-3">
+                         <div className="absolute top-0 right-0 p-2 opacity-5">{renderIcon('Brain', "w-12 h-12")}</div>
+                         <div className={`${styles.small} font-bold text-indigo-600 mb-1 flex items-center gap-1`}>{renderIcon('Brain', "text-indigo-600")} AI 專家分析</div>
+                         <div className={`${styles.body} text-indigo-900 leading-relaxed whitespace-pre-line font-medium relative z-10`}>{log.ai_text}</div>
+                    </div>
+                )}
+                {log.game && (
+                    <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 relative overflow-hidden">
+                         <div className="absolute top-0 right-0 p-2 opacity-5">{renderIcon('Puzzle', "w-12 h-12")}</div>
+                         <div className={`${styles.small} font-bold text-teal-600 mb-1 flex items-center gap-1`}>{renderIcon('Puzzle', "text-teal-600")} 🎲 親子共玩</div>
+                         <div className={`${styles.body} text-teal-800 leading-relaxed whitespace-pre-line font-medium relative z-10`}>{log.game}</div>
+                    </div>
+                )}
+            </div>
+        );
+
+       const DevelopmentCard = ({ item, styles, renderIcon, milestoneMap }) => {
+
+const domainMap = {
+gross_motor:"🏃 大動作",
+fine_motor:"✋ 精細動作",
+language:"🗣 語言",
+cognitive:"🧠 認知",
+social:"💞 社交"
+}
+
+const stageColor = {
+achieved:"bg-green-100 text-green-700",
+emerging:"bg-yellow-100 text-yellow-700",
+next:"bg-indigo-100 text-indigo-700"
+}
+
+return(
+
+<div className="bg-white rounded-2xl p-5 shadow-sm border-l-4 border-purple-400 mb-4">
+
+<div className="flex justify-between items-center mb-2">
+
+<span className={styles.small + " bg-purple-50 text-purple-600 px-3 py-1 rounded-full"}>
+{item.date}
+</span>
+
+<span className={styles.small + " px-2 py-1 rounded-full " + stageColor[item.stage]}>
+{item.stage}
+</span>
+
+</div>
+
+<h3 className={styles.h3 + " font-bold text-gray-800"}>	
+{item.skill}
+</h3>
+
+<div className={styles.small + " text-purple-500 font-bold mb-2"}>
+{domainMap[item.domain]}
+</div>
+
+<div className="bg-gray-50 p-3 rounded-xl mb-3">
+
+<div className={styles.small + " text-gray-400 font-bold mb-1"}>
+	發展分析
+</div>
+
+<div className={styles.body}>	
+{item.analysis}
+</div>
+</div>
+
+            <div className="bg-purple-50 p-3 rounded-xl mb-3">
+                <div className={styles.small + " text-purple-600 font-bold"}>
+                    引導方式
+                </div>
+                <div className={styles.body}>
+                    {item.suggestion}
+                </div>
+            </div>
+
+            <div className={styles.body}>
+                {item.next_stage 
+                    ? item.next_stage
+                    : ((milestoneMap[item.domain] && milestoneMap[item.domain][0] && milestoneMap[item.domain][0].milestone) || "觀察下一階段發展")
+                }
+            </div>
+        </div>
+    );
+};
+        // --- 主要 Dashboard ---
+        const GrowthDashboard = () => {
+            const [tab, setTab] = useState('journey');
+            const [loading, setLoading] = useState(true);
+            const [data, setData] = useState({ 
+growth: [], 
+medical: [], 
+travel: [], 
+logs: [], 
+development: [],
+milestones: []
+});
+            const [error, setError] = useState(null);
+            const [largeText, setLargeText] = useState(false);
+            const [ageStr, setAgeStr] = useState("...");
+            const [daysOld, setDaysOld] = useState("...");
+	    const [birthdayCountdown, setBirthdayCountdown] = useState("...");
+            const [progressPercent, setProgressPercent] = useState(0);
+
+
+              const T = useMemo(() => largeText ? {
+                container: "max-w-3xl", h1: "text-2xl", h3: "text-xl", body: "text-lg", small: "text-sm", iconSize: "w-5 h-5", iconVal: 20
+            } : {
+                container: "max-w-md md:max-w-2xl", h1: "text-xl", h3: "text-base", body: "text-sm", small: "text-xs", iconSize: "w-4 h-4", iconVal: 16
+            }, [largeText]);
+
+            const fetchCSV = (url) => {
+                return new Promise((resolve) => {
+                    if (!url) { resolve([]); return; }
+                    Papa.parse(url, {
+                        download: true, header: true, skipEmptyLines: true,
+                        complete: (results) => resolve(results.data),
+                        error: (err) => { console.error("CSV Error:", err); resolve([]); }
+                    });
+                });
+            };
+
+            useEffect(() => {
+                const loadData = async () => {
+                    try {
+                        const [growth, medical, travel, logs, development, milestones] = await Promise.all([
+                            fetchCSV(SHEET_URLS.growth),
+                            fetchCSV(SHEET_URLS.medical),
+                            fetchCSV(SHEET_URLS.travel),
+                            fetchCSV(SHEET_URLS.logs),
+                            fetchCSV(SHEET_URLS.development),
+							fetchCSV(SHEET_URLS.milestones)
+                        ]);
+
+                        const cleanGrowth = growth.filter(r => r.month).map(r => ({
+                            month: r.month,
+                            meimei: r.meimei ? parseFloat(r.meimei) : null,
+                            who50: parseFloat(r.who50),
+                            who15: parseFloat(r.who15),
+                            height: r.height ? parseFloat(r.height) : null, 
+                            head: r.head ? parseFloat(r.head) : null
+                        }));
+
+                        const cleanMedical = medical.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
+                        const cleanTravel = travel.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
+                        const cleanLogs = logs.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
+                        const cleanDev = development.filter(r => r.date).sort((a,b) => parseDate(b.date) - parseDate(a.date));
+						const cleanMilestones = milestones.filter(r => r.domain);
+
+                        setData({
+                        growth: cleanGrowth,
+						medical: cleanMedical,
+						travel: cleanTravel,
+						logs: cleanLogs,
+						development: cleanDev,
+						milestones: cleanMilestones
+						
+						});
+                        if (cleanGrowth.length === 0 && cleanMedical.length === 0 && cleanLogs.length === 0 && cleanDev.length === 0) throw new Error("Empty Data");
+
+                    } catch (e) {
+                        console.error(e);
+                        setError("讀取失敗：請確認 Google 試算表已「發布到網路」");
+                    } finally {
+                        setLoading(false);
+                        // Dashboard 載入完畢，不需要全域 loader 了
+                    }
+                };
+                loadData();
+              setAgeStr(calculateAge());
+              setDaysOld(calculateDays());
+              setBirthdayCountdown(calculateBirthdayCountdown());
+              setProgressPercent(calculateProgress());
+
+
+            }, []);
+
+            const exportAllToCSV = () => {
+                let csvContent = "\uFEFF=== 下載自雲端備份 ===\n日期,標題,標籤,家長紀錄,AI分析,親子共玩\n";
+                data.logs.forEach(log => { csvContent += `"${log.date}","${log.title}","${log.tag}","${log.parent_text ? log.parent_text.replace(/\n/g, ' ') : ''}","${log.ai_text ? log.ai_text.replace(/\n/g, ' ') : ''}","${log.game ? log.game.replace(/\n/g, ' ') : ''}"\n`; });
+                if (data.development.length > 0) {
+                    csvContent += "\n=== 發展月報 (Development) ===\n日期,標題,分析內容,建議\n";
+                    data.development.forEach(dev => { csvContent += `"${dev.date}","${dev.title}","${dev.analysis ? dev.analysis.replace(/\n/g, ' ') : ''}","${dev.suggestion ? dev.suggestion.replace(/\n/g, ' ') : ''}"\n`; });
+                }
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+                link.setAttribute("download", `Meimei_Cloud_Backup.csv`);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            };
+
+			const renderIcon = (iconName, className) => {
+const IconComponent = Icons[iconName] || Icons.Star;
+if (typeof className === 'number') return <IconComponent size={className} />;
+return <IconComponent size={T.iconVal} className={className} />;
+};
+
+
+// --- AI milestone dictionary ---
+const milestoneMap = useMemo(() => {
+
+const map = {};
+
+(data.milestones || []).forEach(m => {
+
+if(!map[m.domain]) map[m.domain] = [];
+
+map[m.domain].push(m);
+
+});
+
+return map;
+}, [data.milestones]);
+
+
+// ⭐ 在這裡新增
+// --- AI log domain scoring (廣泛辨識升級版) ---
+const logDomainScores = useMemo(() => {
+    const scores = { gross_motor: 0, fine_motor: 0, language: 0, cognitive: 0, social: 0 };
+
+    (data.logs || []).forEach(log => {
+        // 1. 優先辨識：如果 CSV 已手動標記 domain，直接計分 (最精確)
+        if (log.domain && scores[log.domain] !== undefined) {
+            scores[log.domain] += 1;
+            return; 
+        }
+
+        // 2. 次要辨識：廣泛掃描 Tag, 標題與紀錄內容
+        const combinedText = (
+            (log.tag || "") + " " + (log.title || "") + " " + (log.parent_text || "")
+        ).toLowerCase();
+
+        // 粗大動作：涵蓋爬行、站立、走路、放電、攀爬
+        if (/粗大|大動作|走|跑|站|爬|梯|攀|移動|平衡|放電|刺激/.test(combinedText)) scores.gross_motor += 1;
+
+        // 精細動作：涵蓋抓握、捏取、翻書、操作、對準
+        if (/精細|抓|捏|轉|抽|拿|操作|拼圖|翻書|手|對準|積木|放入/.test(combinedText)) scores.fine_motor += 1;
+
+        // 語言溝通：涵蓋發聲、叫人、模仿聲音、單字
+        if (/語言|溝通|叫|說|講|爸|媽|狗|語|詞|聲|回應|拜拜|指令/.test(combinedText)) scores.language += 1;
+
+        // 認知學習：涵蓋模仿、因果探索、發現、物體恆存
+        if (/認知|學習|模仿|理解|找|探索|因果|認得|發現|schema|注意/.test(combinedText)) scores.cognitive += 1;
+
+        // 社會情緒：涵蓋分享、輪流、表情、依附、界線
+        if (/社交|社會|情緒|互動|分享|輪流|笑|抱|界線|依附|黏人|氣質/.test(combinedText)) scores.social += 1;
+    });
+    return scores;
+}, [data.logs]);			
+// --- AI personality scoring (個性特質評分 - 基於標籤細分) ---
+const personalityScores = useMemo(() => {
+    const scores = { explorer: 0, communicator: 0, observer: 0, social: 0, builder: 0 };
+
+    (data.logs || []).forEach(log => {
+        const text = (
+            (log.tag || "") + " " + 
+            (log.title || "") + " " + 
+            (log.parent_text || "")
+        ).toLowerCase();
+
+        // Explorer (探險家)：包含新環境刺激、大動作探索與旅行放電
+        if (/探索|發現|研究|找|新環境|刺激|爬|走|跑|遠|放電/.test(text)) scores.explorer += 1;
+
+        // Communicator (溝通者)：包含模仿說話、發聲回應與拜拜
+        if (/叫|說|講|爸|媽|語|話|詞|仿聲|回應|拜拜|單字/.test(text)) scores.communicator += 1;
+
+        // Observer (觀察者)：包含視覺注意、驚嘆、眼神與社交參照
+        if (/看|注意|盯|觀察|參照|驚嘆|視覺|眼神/.test(text)) scores.observer += 1;
+
+        // Social (社交家)：包含分享、輪流、氣質與依附關係
+        if (/分享|給|一起|笑|互動|氣質|打招呼|黏人|依附|輪流/.test(text)) scores.social += 1;
+
+        // Builder (創造者)：包含精細操作、Schema 圖式、積木與因果探索
+        if (/拿|積木|拼|抓|捏|操作|因果|放入|schema|轉|建構/.test(text)) scores.builder += 1;
+    });
+    return scores;
+}, [data.logs]);    
+			
+            const latestGrowthData = useMemo(() => {
+                if (!data.growth || data.growth.length === 0) return null;
+                const validRows = data.growth.filter(r => r.meimei !== null);
+                return validRows.length > 0 ? validRows[validRows.length - 1] : null;
+            }, [data.growth]);
+
+const journey = useMemo(()=>{
+
+const medicalItems = data.medical
+.filter(r=>r.type==="vaccine")
+.map(r=>({
+date:r.date,
+title:r.title,
+text:r.note,
+type:'medical'
+}))
+
+const travelItems = data.travel.map(r=>({
+date:r.date,
+title:r.title,
+text:r.highlight,
+type:'travel'
+}))
+
+const devItems = data.development.map(r=>({
+date:r.date,
+title:r.title,
+text:r.analysis,
+type:'dev'
+}))
+
+const combined=[
+...medicalItems,
+...travelItems,
+...devItems
+]
+
+return combined.sort((a,b)=>parseDate(b.date)-parseDate(a.date))
+
+},[data])
+
+const timeline = useMemo(()=>{
+
+const logItems = data.logs.map(r => ({
+date: r.date,
+title: r.title,
+text: r.parent_text,
+type: 'log'
+}));
+
+const medicalItems = data.medical.map(r => ({
+date: r.date,
+title: r.title,
+text: r.note,
+type: 'medical'
+}));
+
+const travelItems = data.travel.map(r => ({
+date: r.date,
+title: r.title,
+text: r.highlight,
+type: 'travel'
+}));
+
+const devItems = data.development.map(r => ({
+date: r.date,
+title: r.title,
+text: r.analysis,
+type: 'dev'
+}));
+
+const combined = [
+...logItems,
+...medicalItems,
+...travelItems,
+...devItems
+];
+
+return combined.sort((a,b)=>parseDate(b.date)-parseDate(a.date));
+
+},[data]);
+
+            const getGrowthDisplay = () => {
+                if (!latestGrowthData) return "...";
+                const w = latestGrowthData.meimei ? `${latestGrowthData.meimei}kg` : '';
+                const h = latestGrowthData.height ? ` ${latestGrowthData.height}cm` : '';
+                return `${w}${h}`;
+            };
+
+            if (loading) return (
+                <div className="fixed inset-0 bg-[#fff1f2] flex flex-col justify-center items-center z-50">
+                    <div className="spinner">👶</div>
+                    <p className="text-pink-500 font-bold mt-2">資料同步中...</p>
+                </div>
+            );
+
+            if (error) return <div className="text-center p-10 text-red-500">{error}</div>;
+
+            return (
+                <div className={`${T.container} mx-auto px-4 pb-20 transition-all duration-300`}>
+                    <div className="bg-white/90 backdrop-blur rounded-3xl p-5 text-center shadow-sm mt-4 border border-white relative overflow-hidden">
+                        <div className="flex justify-between mb-2 relative z-10">
+                             <button onClick={() => setLargeText(!largeText)} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full font-bold shadow-sm active:scale-95 transition flex items-center gap-1 hover:bg-gray-200">{renderIcon('Aa', 14)} {largeText ? '標準' : '大字'}</button>
+                            <button onClick={exportAllToCSV} className="text-xs bg-green-500 text-white px-3 py-1.5 rounded-full font-bold shadow-sm active:scale-95 transition flex items-center gap-1">{renderIcon('Save', 14)} 備份</button>
+                        </div>
+                        <div className="bg-pink-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl shadow-inner relative z-10">👶</div>
+                        <h1 className={`${T.h1} font-bold text-gray-800 relative z-10`}>妹妹成長紀錄 <span className={`${T.small} text-pink-400 font-normal`}>Cloud</span></h1>
+                        <div className="mt-3 flex flex-wrap justify-center gap-2 relative z-10">
+    <span className={`${T.small} bg-white px-2 py-1 rounded-full border border-pink-100 font-bold text-gray-600`}>
+        {ageStr}
+    </span>
+
+    <span className={`${T.small} bg-white px-2 py-1 rounded-full border border-indigo-100 font-bold text-indigo-600`}>
+        {daysOld} days
+    </span>
+
+    <span className={`${T.small} bg-white px-2 py-1 rounded-full border border-yellow-100 font-bold text-yellow-700`}>
+        🎂 {birthdayCountdown} days
+    </span>
+
+    <span className={`${T.small} bg-white px-2 py-1 rounded-full border border-purple-100 font-bold text-gray-600`}>
+        {getGrowthDisplay()}
+    </span>
+</div>
+                        <Icons.CloudSun className="absolute top-4 left-4 text-yellow-300 opacity-50" size={28}/>
+<div className="mt-4 relative z-10">
+    <div className="flex justify-between text-[10px] text-gray-400 mb-1 px-1">
+        <span>0Y</span>
+        <span>2Y milestone</span>
+    </div>
+    <div className="w-full bg-pink-100 rounded-full h-2 overflow-hidden">
+        <div
+            className="bg-pink-500 h-2 rounded-full transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+        ></div>
+    </div>
+    <div className="text-[10px] text-pink-500 font-bold mt-1">
+        成長進度 {progressPercent}%
+    </div>
+</div>
+                    </div>
+
+                    <div className="flex gap-2 mt-4 overflow-x-auto pb-1 no-scrollbar justify-center">
+                      {['journey','timeline','log', 'dev', 'health', 'travel'].map(t => (
+                            <button key={t} onClick={()=>setTab(t)} className={`px-4 py-2 rounded-full ${T.small} font-bold whitespace-nowrap transition-all ${tab===t ? 'tab-btn-active' : 'tab-btn-inactive'}`}>{
+t==='journey'?'⭐ 人生時間軸':
+t==='timeline'?'🕰 Timeline':
+t==='health'?'🏥 醫療':
+t==='travel'?'✈️ 足跡':
+t==='dev'? '📊 發展月報':
+'📅 時光機'
+}</button>
+                        ))}
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                        {tab === 'health' && (
+                            <>
+                                <div className="bg-white p-4 rounded-3xl shadow-sm border border-pink-100 mb-4">
+                                    <h3 className={`${T.small} font-bold text-gray-800 mb-2 flex items-center gap-2`}>{renderIcon('Ruler', T.iconVal)} 生長曲線 (WHO)</h3>
+                                    <SafeChart data={data.growth} />
+                                </div>
+
+
+{/* 新增這段 */}
+<div className="bg-white p-4 rounded-3xl shadow-sm border border-purple-100 mb-4">
+
+<h3 className={`${T.small} font-bold text-purple-700 mb-2`}>
+妹妹發展雷達
+</h3>
+
+<DevelopmentRadar  data={data.development} logScores={logDomainScores} />
+<DevelopmentAnalysis data={data.development} logScores={logDomainScores} />
+
+</div>
+
+                                {data.medical.map((rec, i) => (
+                                    <div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 ${rec.type==='sick'?'border-orange-300':'border-blue-300'}`}>
+                                        <div className="flex justify-between items-start">
+                                            <span className={`${T.small} text-gray-400 font-mono`}>{rec.date}</span>
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded text-white ${rec.type==='sick'?'bg-orange-400':'bg-blue-400'}`}>{rec.loc}</span>
+                                        </div>
+                                        <h3 className={`${T.h3} font-bold text-gray-800 mt-1`}>{rec.title}</h3>
+                                        <div className="flex justify-between items-end mt-1">
+                                            <p className={`${T.small} text-gray-500 w-3/4`}>{rec.note}</p>
+                                            <span className={`${T.small} font-bold text-pink-600`}>{rec.detail && rec.detail.split('|')[0]}</span>
+                                        </div>
+                                        {rec.analysis && <div className={`mt-2 pt-2 border-t border-gray-100 ${T.small} text-indigo-800 bg-indigo-50 p-2 rounded`}><span className="font-bold mr-1">💡 醫師觀點：</span>{rec.analysis}</div>}
+                                    </div>
+                                ))}
+                            </>
+                        )}
+
+  {tab === 'travel' && (
+    data.travel.map((rec, i) => (
+
+        <div key={i} className="bg-white p-4 rounded-2xl shadow-sm flex flex-col gap-2 border border-green-50">
+            <div className="flex items-center gap-3">
+                <div className="text-xl bg-green-50 w-12 h-12 flex items-center justify-center rounded-full shadow-inner">
+                    {renderIcon(rec.icon, "text-green-600 w-6 h-6")}
+                </div>
+
+                <div className="flex-1">
+                    <div className="flex justify-between">
+                        <h3 className={`${T.h3} font-bold text-gray-800`}>
+                            {rec.title}
+                        </h3>
+
+                        <span className={`${T.small} text-gray-400`}>
+                            {rec.date}
+                        </span>
+                    </div>
+
+                    <div className={`${T.small} text-green-600`}>
+                        {rec.location}
+                    </div>
+
+                    <p className={`${T.small} text-gray-400 mt-0.5`}>
+                        {rec.highlight}
+                    </p>
+                </div>
+            </div>
+
+            {rec.analysis && (
+                <div className={`mt-1 bg-green-50 p-2 rounded-lg ${T.small} text-green-800`}>
+                    <span className="font-bold">🧠 發展意義：</span>
+                    {rec.analysis}
+                </div>
+            )}
+        </div>
+
+    ))
+)}
+
+
+{tab === 'journey' && journey.map((item, i) => (
+    <div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 ${
+        {
+            medical: 'border-blue-300',
+            travel: 'border-green-300',
+            dev: 'border-purple-300'
+        }[item.type] || ''
+    }`}>
+        <div className="flex justify-between mb-1">
+            <span className={`${T.small} text-gray-400`}>
+                {item.date}
+            </span>
+
+            <span className={`${T.small} font-bold text-gray-500`}>
+                {
+                    {
+                        medical: '🏥 醫療里程碑',
+                        travel: '✈️ 人生旅行',
+                        dev: '📊 發展突破'
+                    }[item.type] || ''
+                } 
+            </span>
+        </div>
+
+        <h3 className={`${T.h3} font-bold text-gray-800`}>
+            {item.title}
+        </h3>
+
+        <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>
+            {item.text}
+        </p>
+    </div>
+))}
+
+{tab === 'timeline' && timeline.map((item, i) => {
+    return (
+        <div key={i} className={`bg-white p-4 rounded-2xl shadow-sm border-l-4 ${
+            {
+                log: 'border-pink-300',
+                medical: 'border-blue-300',
+                travel: 'border-green-300',
+                dev: 'border-purple-300'
+            }[item.type] || ''
+        }`}>
+            <div className="flex justify-between mb-1">
+                <span className={`${T.small} text-gray-400`}>
+                    {item.date}
+                </span>
+
+                <span className={`${T.small} font-bold text-gray-500`}>
+                    {
+                        {
+                            log: '📅 日常',
+                            medical: '🏥 醫療',
+                            travel: '✈️ 旅行',
+                            dev: '📊 發展'
+                        }[item.type] || ''
+                    }
+                </span>
+            </div>
+
+            <h3 className={`${T.h3} font-bold text-gray-800`}>
+                {item.title}
+            </h3>
+
+            {item.text && (
+                <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>
+                    {item.text}
+                </p>
+            )}
+        </div>
+    );
+})}			
+
+{tab === 'log' && data.logs.map((log, i) => (
+    <SmartLog
+        key={i}
+        log={log}
+        styles={T}
+        renderIcon={renderIcon}
+    />
+))}
+{tab === 'dev' && (
+                        <> 
+                            <div className="bg-white p-5 rounded-3xl shadow-sm border border-pink-100 mb-6 text-center">
+                                <h3 className={`${T.small} font-bold text-pink-700 mb-2`}>✨ 妹妹個性特質分析</h3>
+                                <PersonalityRadar scores={personalityScores} />
+                                <div className="mt-2 p-3 bg-pink-50 rounded-2xl border border-pink-100 text-[10px] text-pink-800 italic leading-relaxed">
+                                    分析說明：此圖表根據你日記中的 <b>Schema (圖式)</b>、<b>因果探索</b> 與 <b>社交氣質</b> 標籤自動加權生成。
+                                </div>
+                            </div>
+
+                            {data.development.length > 0 ? (
+                                data.development.map((item, i) => (
+                                    <DevelopmentCard
+                                        key={i}
+                                        item={item}
+                                        styles={T}
+                                        renderIcon={renderIcon}
+                                        milestoneMap={milestoneMap}
+                                    />
+                                ))
+                            ) : (
+                                <div className="text-center py-10">
+                                    <div className="text-4xl mb-3">📊</div>
+                                    <p className="text-gray-400 text-sm">還沒有發展評估資料喔！<br/>請在 Development 分頁新增</p>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            );
+        };
+
+        // --- 🔒 新增：應用程式主入口 (負責鎖屏邏輯) ---
+        const App = () => {
+            const [unlocked, setUnlocked] = useState(false);
+            const [input, setInput] = useState("");
+            const [errorMsg, setErrorMsg] = useState("");
+
+            // 檢查是否曾經登入過 (可選：如果要關掉網頁就重鎖，把這段 localStorage 註解掉即可)
+            useEffect(() => {
+                if(localStorage.getItem('mm_unlocked') === 'true') {
+                    setUnlocked(true);
+                }
+            }, []);
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (input === PASSCODE) {
+                    setUnlocked(true);
+                    localStorage.setItem('mm_unlocked', 'true'); // 記住登入狀態
+                } else {
+                    setErrorMsg("密碼錯誤，請試試妹妹生日");
+                    setInput("");
+                }
+            };
+
+            if (!unlocked) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-pink-50/50">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center border-2 border-white">
+                            <div className="bg-pink-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">🔒</div>
+                            <h2 className="text-2xl font-bold text-gray-800 mb-2">請輸入通關密碼</h2>
+                            <p className="text-gray-400 text-sm mb-6">為了保護隱私，請輸入密碼以繼續</p>
+                            
+                            <form onSubmit={handleLogin}>
+                                <input 
+                                    type="number" pattern="\d*" 
+                                    placeholder="輸入密碼..." 
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-lg mb-3 focus:ring-2 ring-pink-400 outline-none transition-all"
+                                    value={input}
+                                    onChange={(e) => {setInput(e.target.value); setErrorMsg("");}}
+                                    autoFocus
+                                />
+                                {errorMsg && <p className="text-red-500 text-sm mb-3 font-bold">{errorMsg}</p>}
+                                <button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 transition-all active:scale-95">
+                                    解鎖 🔓
+                                </button>
+                            </form>
+                            <p className="mt-6 text-xs text-gray-300">Meimei's Growth Record</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return <GrowthDashboard />;
+        };
+
+        const rootElement = document.getElementById("root");
+const root = ReactDOM.createRoot(rootElement);
+root.render(React.createElement(App));
+    </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
