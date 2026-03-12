@@ -223,7 +223,7 @@ scores[d.domain] += weight;
 
 // 加入 logs 行為分數
 Object.keys(scores).forEach(k => {
-scores[k] += (logScores?.[k] || 0);
+scores[k] += ((logScores && logScores[k]) || 0);
 });	
 
 // 轉成 RadarChart 格式
@@ -286,7 +286,7 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
 
     // 2. 💡 重要修正：同步納入日記 (Logs) 的廣泛辨識分數
     Object.keys(scores).forEach(k => {
-        scores[k] += (logScores?.[k] || 0);
+        scores[k] += ((logScores && logScores[k]) || 0);
     });
 
     const domainName = {
@@ -544,7 +544,7 @@ milestones: []
 
             const exportAllToCSV = () => {
                 let csvContent = "\uFEFF=== 下載自雲端備份 ===\n日期,標題,標籤,家長紀錄,AI分析,親子共玩\n";
-                data.logs.forEach(log => { csvContent += `"${log.date}","${log.title}","${log.tag}","${log.parent_text?.replace(/\n/g, ' ')}","${log.ai_text?.replace(/\n/g, ' ')}","${log.game?.replace(/\n/g, ' ')}"\n`; });
+                data.logs.forEach(log => { csvContent += `"${log.date}","${log.title}","${log.tag}","${log.parent_text ? log.parent_text.replace(/\n/g, ' ')}","${log.ai_text ? log.ai_text.replace(/\n/g, ' ')}","${log.game ? log.game.replace(/\n/g, ' ')}"\n`; });
                 if (data.development.length > 0) {
                     csvContent += "\n=== 發展月報 (Development) ===\n日期,標題,分析內容,建議\n";
                     data.development.forEach(dev => { csvContent += `"${dev.date}","${dev.title}","${dev.analysis?.replace(/\n/g, ' ')}","${dev.suggestion?.replace(/\n/g, ' ')}"\n`; });
@@ -1053,47 +1053,3 @@ root.render(React.createElement(App));
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
