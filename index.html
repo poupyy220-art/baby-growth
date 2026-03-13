@@ -234,13 +234,14 @@ scores[k] += ((logScores && logScores[k]) || 0);
 });	
 
 // 轉成 RadarChart 格式
+// ✅ PATCH 1: 限制每個領域分數最大值為 10，避免 Logs 累積後 scale 無限成長
 const radarData = [
- {subject:"大動作",value:scores.gross_motor},
- {subject:"精細動作",value:scores.fine_motor},
- {subject:"語言",value:scores.language},
- {subject:"認知",value:scores.cognitive},
- {subject:"社交",value:scores.social},
- {subject:"生活適應",value:scores.adaptive}
+ {subject:"大動作",value:Math.min(scores.gross_motor,10)},
+ {subject:"精細動作",value:Math.min(scores.fine_motor,10)},
+ {subject:"語言",value:Math.min(scores.language,10)},
+ {subject:"認知",value:Math.min(scores.cognitive,10)},
+ {subject:"社交",value:Math.min(scores.social,10)},
+ {subject:"生活適應",value:Math.min(scores.adaptive,10)}
 ]
 return (
 
@@ -254,7 +255,7 @@ return (
 
 <PolarAngleAxis dataKey="subject" />
 
-<PolarRadiusAxis />
+<PolarRadiusAxis domain={[0, 10]} />{/* ✅ PATCH 2: 固定 Radar scale 0~10，防止動態縮放 */}
 
 <Radar
 dataKey="value"
