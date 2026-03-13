@@ -706,6 +706,7 @@ const logItems = data.logs.map(r => ({
 date: r.date,
 title: r.title,
 text: r.parent_text,
+ai: r.ai_text,   // ✅ PATCH: 帶入 ai_text，確保同一筆 log 整合在同一張 card
 type: 'log'
 }));
 
@@ -898,10 +899,11 @@ t==='dev'? '📊 發展月報':
                                                 {{log:'📅 日常',medical:'🏥 醫療',travel:'✈️ 旅行',dev:'📊 發展'}[item.type]||''}
                                             </span>
                                         </div>
-                                        {/* ✅ PATCH: title 有值才顯示標題，否則直接顯示 text */}
+                                        {/* ✅ PATCH: title 有值才顯示標題，否則直接顯示 text；log 類型補顯示 ai_text */}
                                         {(() => {
                                             const title = (item.title || "").trim();
                                             const description = item.text || "";
+                                            const ai = item.ai || "";
                                             if (title) {
                                                 return (
                                                     <>
@@ -909,12 +911,22 @@ t==='dev'? '📊 發展月報':
                                                         {description && (
                                                             <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{description}</p>
                                                         )}
+                                                        {ai && item.type === 'log' && (
+                                                            <p className={`${T.small} text-indigo-700 mt-2 bg-indigo-50 p-2 rounded-xl whitespace-pre-line`}>{ai}</p>
+                                                        )}
                                                     </>
                                                 );
                                             } else {
-                                                return description ? (
-                                                    <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{description}</p>
-                                                ) : null;
+                                                return (
+                                                    <>
+                                                        {description && (
+                                                            <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{description}</p>
+                                                        )}
+                                                        {ai && item.type === 'log' && (
+                                                            <p className={`${T.small} text-indigo-700 mt-2 bg-indigo-50 p-2 rounded-xl whitespace-pre-line`}>{ai}</p>
+                                                        )}
+                                                    </>
+                                                );
                                             }
                                         })()}
                                     </div>
