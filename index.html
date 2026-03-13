@@ -78,6 +78,22 @@
         // 🔑 設定密碼 (如果要改密碼改這裡)
         const PASSCODE = "20241226"; 
 
+        // 📣 LINE 通知設定 (透過 Google Apps Script 代理)
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwatJE0vgnlm3JfQAMGHwLPFEMw52gqXJDwcujKK1wNnyaTemOvkl0oV0g2KHPVk2Yz/exec";
+
+        async function sendLineNotify(title, text, date) {
+            try {
+                await fetch(GAS_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, text, date })
+                });
+                console.log("✅ LINE 通知已發送：", title);
+            } catch (err) {
+                console.error("❌ LINE 通知發送失敗：", err);
+            }
+        }
+
         // --- Helper Functions ---
         const parseDate = (dateStr) => {
             if (!dateStr) return new Date(0);
@@ -478,6 +494,7 @@ milestones: []
             const [daysOld, setDaysOld] = useState("...");
 	    const [birthdayCountdown, setBirthdayCountdown] = useState("...");
             const [progressPercent, setProgressPercent] = useState(0);
+            const [showUpdateBanner, setShowUpdateBanner] = useState(false);
 
 
               const T = useMemo(() => largeText ? {
@@ -536,6 +553,43 @@ milestones: []
 						milestones: cleanMilestones
 						
 						});
+
+                        // 📣 LINE 通知：偵測新增日誌並發送通知
+                        try {
+                            const SEEN_KEY = "mm_seen_log_keys";
+                            const makeKey = (log) => `${log.date}|${log.title}`;
+                            const seenRaw = localStorage.getItem(SEEN_KEY);
+                            const seenKeys = seenRaw ? new Set(JSON.parse(seenRaw)) : null;
+                            const currentKeys = cleanLogs.map(makeKey);
+
+                            if (seenKeys === null) {
+                                // 第一次載入：只記錄現有 keys，不發通知（避免舊資料被誤判為新增）
+                                localStorage.setItem(SEEN_KEY, JSON.stringify(currentKeys));
+                            } else {
+                                const newLogs = cleanLogs.filter(log => !seenKeys.has(makeKey(log)));
+                                if (newLogs.length > 0) {
+                                    localStorage.setItem(SEEN_KEY, JSON.stringify(currentKeys));
+                                    for (const log of newLogs) {
+                                        await sendLineNotify(log.title || "新紀錄", log.parent_text || "", log.date || "");
+                                    }
+                                }
+                            }
+                        } catch (notifyErr) {
+                            console.error("LINE 通知流程錯誤：", notifyErr);
+                        }
+
+                        // 📢 更新偵測：比對最新 log 日期與 localStorage
+                        try {
+                            const latestLog = cleanLogs[0]; // 已按日期降序排序，第一筆最新
+                            const lastSeen = localStorage.getItem("lastSeenLog");
+                            if (latestLog && latestLog.date !== lastSeen) {
+                                setShowUpdateBanner(true);
+                                localStorage.setItem("lastSeenLog", latestLog.date);
+                            }
+                        } catch (bannerErr) {
+                            console.error("更新偵測錯誤：", bannerErr);
+                        }
+
                         if (cleanGrowth.length === 0 && cleanMedical.length === 0 && cleanLogs.length === 0 && cleanDev.length === 0) throw new Error("Empty Data");
 
                     } catch (e) {
@@ -706,7 +760,6 @@ const logItems = data.logs.map(r => ({
 date: r.date,
 title: r.title,
 text: r.parent_text,
-ai: r.ai_text,   // ✅ PATCH: 帶入 ai_text，確保同一筆 log 整合在同一張 card
 type: 'log'
 }));
 
@@ -760,6 +813,25 @@ return combined.sort((a,b)=>parseDate(b.date)-parseDate(a.date));
 
             return (
                 <div className={`${T.container} mx-auto px-4 pb-20 transition-all duration-300`}>
+                    {showUpdateBanner && (
+                        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-3 pointer-events-none">
+                            <div className="bg-white border border-pink-200 rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3 pointer-events-auto max-w-sm w-full">
+                                <span className="text-lg">📢</span>
+                                <span className="text-sm font-bold text-gray-700 flex-1">有新的妹妹成長紀錄更新</span>
+                                <button
+                                    onClick={() => { setShowUpdateBanner(false); window.location.reload(); }}
+                                    className="text-xs bg-pink-500 text-white px-3 py-1.5 rounded-full font-bold shadow-sm active:scale-95 transition whitespace-nowrap"
+                                >
+                                    重新載入資料
+                                </button>
+                                <button
+                                    onClick={() => setShowUpdateBanner(false)}
+                                    className="text-gray-300 hover:text-gray-500 font-bold text-lg leading-none ml-1"
+                                    aria-label="關閉"
+                                >×</button>
+                            </div>
+                        </div>
+                    )}
                     <div className="bg-white/90 backdrop-blur rounded-3xl p-5 text-center shadow-sm mt-4 border border-white relative overflow-hidden">
                         <div className="flex justify-between mb-2 relative z-10">
                              <button onClick={() => setLargeText(!largeText)} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full font-bold shadow-sm active:scale-95 transition flex items-center gap-1 hover:bg-gray-200">{renderIcon('Aa', 14)} {largeText ? '標準' : '大字'}</button>
@@ -899,11 +971,10 @@ t==='dev'? '📊 發展月報':
                                                 {{log:'📅 日常',medical:'🏥 醫療',travel:'✈️ 旅行',dev:'📊 發展'}[item.type]||''}
                                             </span>
                                         </div>
-                                        {/* ✅ PATCH: title 有值才顯示標題，否則直接顯示 text；log 類型補顯示 ai_text */}
+                                        {/* ✅ PATCH: title 有值才顯示標題，否則直接顯示 text */}
                                         {(() => {
                                             const title = (item.title || "").trim();
                                             const description = item.text || "";
-                                            const ai = item.ai || "";
                                             if (title) {
                                                 return (
                                                     <>
@@ -911,22 +982,12 @@ t==='dev'? '📊 發展月報':
                                                         {description && (
                                                             <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{description}</p>
                                                         )}
-                                                        {ai && item.type === 'log' && (
-                                                            <p className={`${T.small} text-indigo-700 mt-2 bg-indigo-50 p-2 rounded-xl whitespace-pre-line`}>{ai}</p>
-                                                        )}
                                                     </>
                                                 );
                                             } else {
-                                                return (
-                                                    <>
-                                                        {description && (
-                                                            <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{description}</p>
-                                                        )}
-                                                        {ai && item.type === 'log' && (
-                                                            <p className={`${T.small} text-indigo-700 mt-2 bg-indigo-50 p-2 rounded-xl whitespace-pre-line`}>{ai}</p>
-                                                        )}
-                                                    </>
-                                                );
+                                                return description ? (
+                                                    <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{description}</p>
+                                                ) : null;
                                             }
                                         })()}
                                     </div>
