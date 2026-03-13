@@ -207,11 +207,12 @@ ResponsiveContainer
 
 // 計算各領域分數
 const scores = {
-gross_motor:0,
-fine_motor:0,
-language:0,
-cognitive:0,
-social:0
+  gross_motor:0,
+  fine_motor:0,
+  language:0,
+  cognitive:0,
+  social:0,
+  adaptive:0
 };
 
 (data || []).forEach(d => {
@@ -234,12 +235,13 @@ scores[k] += ((logScores && logScores[k]) || 0);
 
 // 轉成 RadarChart 格式
 const radarData = [
-{subject:"大動作",value:scores.gross_motor},
-{subject:"精細動作",value:scores.fine_motor},
-{subject:"語言",value:scores.language},
-{subject:"認知",value:scores.cognitive},
-{subject:"社交",value:scores.social}
-];
+ {subject:"大動作",value:scores.gross_motor},
+ {subject:"精細動作",value:scores.fine_motor},
+ {subject:"語言",value:scores.language},
+ {subject:"認知",value:scores.cognitive},
+ {subject:"社交",value:scores.social},
+ {subject:"生活適應",value:scores.adaptive}
+]
 return (
 
 <div className="h-[260px] w-full">
@@ -278,6 +280,7 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
         language: 0,
         cognitive: 0,
         social: 0
+        adaptive:0
     };
 
     // 1. 計算正式發展評估的分數 (Development 分頁)
@@ -591,7 +594,7 @@ return map;
 // ⭐ 在這裡新增
 // --- AI log domain scoring (廣泛辨識升級版) ---
 const logDomainScores = useMemo(() => {
-    const scores = { gross_motor: 0, fine_motor: 0, language: 0, cognitive: 0, social: 0 };
+    const scores = { gross_motor: 0, fine_motor: 0, language: 0, cognitive: 0, social: 0, adaptive: 0 };
 
     (data.logs || []).forEach(log => {
         // 1. 優先辨識：如果 CSV 已手動標記 domain，直接計分 (最精確)
@@ -619,6 +622,10 @@ const logDomainScores = useMemo(() => {
 
         // 社會情緒：涵蓋分享、輪流、表情、依附、界線
         if (/社交|社會|情緒|互動|分享|輪流|笑|抱|界線|依附|黏人|氣質/.test(combinedText)) scores.social += 1;
+
+        // 生活適應：作息、排便、旅行適應、自理
+        if (/排便|如廁|穿衣|吃飯|作息|旅行適應|環境適應|生活技能|自理/.test(combinedText)) scores.adaptive += 1;
+
     });
     return scores;
 }, [data.logs]);			
