@@ -898,10 +898,25 @@ t==='dev'? '📊 發展月報':
                                                 {{log:'📅 日常',medical:'🏥 醫療',travel:'✈️ 旅行',dev:'📊 發展'}[item.type]||''}
                                             </span>
                                         </div>
-                                        <h3 className={`${T.h3} font-bold text-gray-800`}>{item.title}</h3>
-                                        {item.text && (
-                                            <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{item.text}</p>
-                                        )}
+                                        {/* ✅ PATCH: title 有值才顯示標題，否則直接顯示 text */}
+                                        {(() => {
+                                            const title = (item.title || "").trim();
+                                            const description = item.text || "";
+                                            if (title) {
+                                                return (
+                                                    <>
+                                                        <h3 className={`${T.h3} font-bold text-gray-800`}>{title}</h3>
+                                                        {description && (
+                                                            <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{description}</p>
+                                                        )}
+                                                    </>
+                                                );
+                                            } else {
+                                                return description ? (
+                                                    <p className={`${T.small} text-gray-600 mt-1 whitespace-pre-line`}>{description}</p>
+                                                ) : null;
+                                            }
+                                        })()}
                                     </div>
                                 ))}
                             </>
