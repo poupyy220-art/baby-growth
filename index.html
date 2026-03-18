@@ -345,17 +345,41 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
         return null;
     }
 
-    const strongest = sorted[0];
-    const weakest = sorted[sorted.length - 1];
+	// 👇 ✅ 放這裡（完全正確）
+function generateNarrative(scores, strongest, weakest, domainName) {
+    const values = Object.values(scores);
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const diff = max - min;
+
+    let overall = diff <= 2
+        ? "整體發展呈現均衡且穩定的狀態，各領域都有持續累積。"
+        : "整體發展良好，部分領域表現較為突出。";
+
+    let strength = `在${domainName[strongest[0]]}方面表現較為活躍，顯示相關能力發展良好。`;
+
+    let weakness = `相較之下，${domainName[weakest[0]]}相關互動較少，建議可在日常中增加相關刺激。`;
+
+    return { overall, strength, weakness };
+}
+
+// 👇 原本的
+const strongest = sorted[0];
+const weakest = sorted[sorted.length - 1];
+
+// 👇 新增
+const narrative = generateNarrative(scores, strongest, weakest, domainName);
 
     return (
         <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 mt-4 shadow-sm">
             <h3 className="font-bold text-indigo-700 mb-2 flex items-center gap-1">
                 📊 發展深度分析
             </h3>
-            <div className="text-sm text-gray-700 mb-2">
-                近期紀錄活躍度較高：<b className="text-indigo-900">{domainName[strongest[0]]}</b>
-            </div>
+            <div className="text-sm text-gray-700 mb-2 space-y-1">
+  <div>{narrative.overall}</div>
+  <div>{narrative.strength}</div>
+  <div className="text-pink-600">{narrative.weakness}</div>
+</div>
             <div className="text-sm text-gray-600 italic border-t border-indigo-100 pt-2 mt-2">
                 💡 建議引導：目前的紀錄中 <b className="text-pink-600">{domainName[weakest[0]]}</b> 的相關活動較少，可參考里程碑清單增加互動刺激。
             </div>
