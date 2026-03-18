@@ -154,7 +154,19 @@ const calculateProgress = () => {
     const percent = Math.min(100, Math.max(0, Math.round((current / total) * 100)));
     return percent;
 };
+		
+// --- 🆕 分數平滑工具 ---
+function clamp(value, min = 0, max = 10) {
+    return Math.max(min, Math.min(max, value));
+}
 
+function dampedScore(count, target = 8) {
+    if (!count || count <= 0) return 0;
+    const ratio = count / target;
+    const score = 10 * (1 - Math.exp(-2.2 * ratio));
+    return clamp(Number(score.toFixed(1)), 0, 10);
+}
+		
         // --- Icons ---
         const IconBase = ({ children, color = "currentColor", size, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
@@ -246,8 +258,9 @@ scores[d.domain] += weight;
 
 // 加入 logs 行為分數
 Object.keys(scores).forEach(k => {
-scores[k] += ((logScores && logScores[k]) || 0);
-});	
+  const raw = (logScores && logScores[k]) || 0;
+  scores[k] += dampedScore(raw, 8);
+});
 
 // 轉成 RadarChart 格式
 // ✅ PATCH 1: 限制每個領域分數最大值為 10，避免 Logs 累積後 scale 無限成長
@@ -312,8 +325,9 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
 
     // 2. 💡 重要修正：同步納入日記 (Logs) 的廣泛辨識分數
     Object.keys(scores).forEach(k => {
-        scores[k] += ((logScores && logScores[k]) || 0);
-    });
+    const raw = (logScores && logScores[k]) || 0;
+    scores[k] += dampedScore(raw, 8);
+});
 
     const domainName = {
         gross_motor: "大動作",
@@ -340,7 +354,7 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
                 📊 發展深度分析
             </h3>
             <div className="text-sm text-gray-700 mb-2">
-                目前主導型態：<b className="text-indigo-900">{domainName[strongest[0]]}型發展</b>
+                近期紀錄活躍度較高：<b className="text-indigo-900">{domainName[strongest[0]]}</b>
             </div>
             <div className="text-sm text-gray-600 italic border-t border-indigo-100 pt-2 mt-2">
                 💡 建議引導：目前的紀錄中 <b className="text-pink-600">{domainName[weakest[0]]}</b> 的相關活動較少，可參考里程碑清單增加互動刺激。
