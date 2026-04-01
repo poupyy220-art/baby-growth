@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>妹妹成長紀錄 v23.0 (Secure)</title>
+    <title>妹妹成長紀錄 v24.1 (Secure)</title>
     
     <meta name="apple-mobile-web-app-title" content="妹妹紀錄">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -275,7 +275,7 @@ const scores = {
 // 加入 logs 行為分數
 Object.keys(scores).forEach(k => {
   const raw = (logScores && logScores[k]) || 0;
-  scores[k] += dampedScore(raw, 8);
+  scores[k] = scores[k] * 0.7 + dampedScore(raw, 12) * 0.3;
 });
 
 // 轉成 RadarChart 格式
@@ -358,7 +358,7 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
     // 2. 💡 重要修正：同步納入日記 (Logs) 的廣泛辨識分數
     Object.keys(scores).forEach(k => {
     const raw = (logScores && logScores[k]) || 0;
-    scores[k] += dampedScore(raw, 8);
+    scores[k] = scores[k] * 0.7 + dampedScore(raw, 12) * 0.3;
 });
 
     const domainName = {
