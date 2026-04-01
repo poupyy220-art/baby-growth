@@ -716,6 +716,52 @@ map[m.domain].push(m);
 return map;
 }, [data.milestones]);
 
+// ⭐⭐ 新增：多維度拆解規則（放在 logDomainScores 上面）
+const MULTI_DOMAIN_MAP = [
+  {
+    keywords: ["爬", "爬上", "爬下"],
+    domains: ["gross_motor", "cognitive"]
+  },
+  {
+    keywords: ["跑", "爆走", "衝來衝去"],
+    domains: ["gross_motor", "cognitive"]
+  },
+  {
+    keywords: ["追", "追狗", "追著跑"],
+    domains: ["gross_motor", "cognitive"]
+  },
+  {
+    keywords: ["模仿", "學", "跟著做"],
+    domains: ["social", "cognitive"]
+  },
+  {
+    keywords: ["自己", "自己拿", "自己喝"],
+    domains: ["adaptive", "cognitive"]
+  },
+  {
+    keywords: ["探索", "到處", "到處走"],
+    domains: ["cognitive"]
+  },
+  {
+    keywords: ["打招呼"],
+    domains: ["social"]
+  }
+];
+
+function detectDomainsFromText(text) {
+  const result = new Set();
+
+  MULTI_DOMAIN_MAP.forEach(rule => {
+    rule.keywords.forEach(k => {
+      if (text.includes(k)) {
+        rule.domains.forEach(d => result.add(d));
+      }
+    });
+  });
+
+  return Array.from(result);
+}
+
 
 // ⭐ 在這裡新增
 // --- AI log domain scoring (廣泛辨識升級版) ---
@@ -733,6 +779,15 @@ const logDomainScores = useMemo(() => {
         const combinedText = (
             (log.tag || "") + " " + (log.title || "") + " " + (log.parent_text || "")
         ).toLowerCase();
+
+// ⭐⭐ 新增：多domain拆解
+const detected = detectDomainsFromText(combinedText);
+
+detected.forEach(dom => {
+  if (scores[dom] !== undefined) {
+    scores[dom] += 0.5; // 副能力加權（避免爆）
+  }
+});
 
         // 粗大動作：涵蓋爬行、站立、走路、放電、攀爬
         if (/粗大|大動作|走|跑|站|爬|梯|攀|移動|平衡|放電|刺激/.test(combinedText)) scores.gross_motor += 1;
