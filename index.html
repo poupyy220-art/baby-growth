@@ -275,7 +275,7 @@ const scores = {
 // 加入 logs 行為分數
 Object.keys(scores).forEach(k => {
   const raw = (logScores && logScores[k]) || 0;
-  scores[k] = scores[k] * 0.7 + dampedScore(raw, 12) * 0.3;
+  scores[k] = scores[k] * 0.5 + dampedScore(raw, 12) * 0.5;
 });
 
 // 轉成 RadarChart 格式
@@ -358,7 +358,7 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
     // 2. 💡 重要修正：同步納入日記 (Logs) 的廣泛辨識分數
     Object.keys(scores).forEach(k => {
     const raw = (logScores && logScores[k]) || 0;
-    scores[k] = scores[k] * 0.7 + dampedScore(raw, 12) * 0.3;
+    scores[k] = scores[k] * 0.5 + dampedScore(raw, 12) * 0.5;
 });
 
     const domainName = {
