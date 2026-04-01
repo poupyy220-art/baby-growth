@@ -244,16 +244,32 @@ const scores = {
 };
 
 (data || []).forEach(d => {
+  let weight = 0;
 
-let weight = 0;
+  // summary = 月齡整體判讀主體
+  if (d.type === "summary") {
+    if (d.stage === "emerging") weight = 2;
+    if (d.stage === "progressing") weight = 3;
+    if (d.stage === "advanced") weight = 4;
+    if (d.stage === "achieved") weight = 5;
+  }
 
-if(d.stage === "achieved") weight = 2;
-if(d.stage === "emerging") weight = 1;
+  // skill / play / routine = 具體能力證據補強
+  else if (["skill", "play", "routine"].includes(d.type)) {
+    if (d.stage === "emerging") weight = 0.5;
+    if (d.stage === "progressing") weight = 1;
+    if (d.stage === "advanced") weight = 1.5;
+    if (d.stage === "achieved") weight = 2;
+  }
 
-if(scores[d.domain] !== undefined){
-scores[d.domain] += weight;
-}
+  // transition = 先不納入雷達主分數
+  else if (d.type === "transition") {
+    weight = 0;
+  }
 
+  if (scores[d.domain] !== undefined) {
+    scores[d.domain] += weight;
+  }
 });
 
 // 加入 logs 行為分數
@@ -314,14 +330,30 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
     };
 
     // 1. 計算正式發展評估的分數 (Development 分頁)
-    (data || []).forEach(d => {
-        let weight = 0;
-        if(d.stage === "achieved") weight = 2;
-        if(d.stage === "emerging") weight = 1;
-        if(scores[d.domain] !== undefined) {
-            scores[d.domain] += weight;
-        }
-    });
+// summary = 月齡整體判讀主體
+// skill/play/routine = 具體能力證據補強
+// transition = 先不納入主分數
+(data || []).forEach(d => {
+    let weight = 0;
+
+    if (d.type === "summary") {
+        if (d.stage === "emerging") weight = 2;
+        if (d.stage === "progressing") weight = 3;
+        if (d.stage === "advanced") weight = 4;
+        if (d.stage === "achieved") weight = 5;
+    } else if (["skill", "play", "routine"].includes(d.type)) {
+        if (d.stage === "emerging") weight = 0.5;
+        if (d.stage === "progressing") weight = 1;
+        if (d.stage === "advanced") weight = 1.5;
+        if (d.stage === "achieved") weight = 2;
+    } else if (d.type === "transition") {
+        weight = 0;
+    }
+
+    if (scores[d.domain] !== undefined) {
+        scores[d.domain] += weight;
+    }
+});
 
     // 2. 💡 重要修正：同步納入日記 (Logs) 的廣泛辨識分數
     Object.keys(scores).forEach(k => {
@@ -334,6 +366,7 @@ const DevelopmentAnalysis = ({ data, logScores }) => {
         fine_motor: "精細動作",
         language: "語言",
         cognitive: "認知",
+        adaptive: "生活適應",
         social: "社交"
     };
 
