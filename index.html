@@ -769,13 +769,13 @@ const logDomainScores = useMemo(() => {
     const scores = { gross_motor: 0, fine_motor: 0, language: 0, cognitive: 0, social: 0, adaptive: 0 };
 
     (data.logs || []).forEach(log => {
-        // 1. 優先辨識：如果 CSV 已手動標記 domain，直接計分 (最精確)
+
+        // ✅ 1. 人工 domain（保留，但不 return）
         if (log.domain && scores[log.domain] !== undefined) {
             scores[log.domain] += 1;
-            return; 
         }
 
-        // 2. 次要辨識：廣泛掃描 Tag, 標題與紀錄內容
+        // ✅ 2. 組合文字
         const combinedText = (
             (log.tag || "") + " " + (log.title || "") + " " + (log.parent_text || "")
         ).toLowerCase();
