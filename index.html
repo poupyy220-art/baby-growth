@@ -1161,15 +1161,19 @@ t==='dev'? '📊 發展月報':
 
             // 檢查是否曾經登入過 (可選：如果要關掉網頁就重鎖，把這段 localStorage 註解掉即可)
             useEffect(() => {
-                if(localStorage.getItem('mm_unlocked') === 'true') {
-                    setUnlocked(true);
+                try {
+                    if(localStorage.getItem('mm_unlocked') === 'true') {
+                        setUnlocked(true);
+                    }
+                } catch(e) {
+                    console.warn('localStorage not available');
                 }
             }, []);
 
             const handleLogin = () => {
                 if (input === PASSCODE) {
                     setUnlocked(true);
-                    localStorage.setItem('mm_unlocked', 'true');
+                    try { localStorage.setItem('mm_unlocked', 'true'); } catch(e) {}
                 } else {
                     setErrorMsg("密碼錯誤，請試試妹妹生日");
                     setInput("");
