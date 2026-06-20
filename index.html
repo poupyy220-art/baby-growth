@@ -629,17 +629,17 @@ milestones: []
                         try {
                             const SEEN_KEY = "mm_seen_log_keys";
                             const makeKey = (log) => `${log.date}|${log.title}`;
-                            const seenRaw = localStorage.getItem(SEEN_KEY);
+                            let seenRaw = null;
+                            try { seenRaw = localStorage.getItem(SEEN_KEY); } catch(e) {}
                             const seenKeys = seenRaw ? new Set(JSON.parse(seenRaw)) : null;
                             const currentKeys = cleanLogs.map(makeKey);
 
                             if (seenKeys === null) {
-                                // 第一次載入：只記錄現有 keys，不發通知（避免舊資料被誤判為新增）
-                                localStorage.setItem(SEEN_KEY, JSON.stringify(currentKeys));
+                                try { localStorage.setItem(SEEN_KEY, JSON.stringify(currentKeys)); } catch(e) {}
                             } else {
                                 const newLogs = cleanLogs.filter(log => !seenKeys.has(makeKey(log)));
                                 if (newLogs.length > 0) {
-                                    localStorage.setItem(SEEN_KEY, JSON.stringify(currentKeys));
+                                    try { localStorage.setItem(SEEN_KEY, JSON.stringify(currentKeys)); } catch(e) {}
                                     for (const log of newLogs) {
                                         await sendLineNotify(log.title || "新紀錄", log.parent_text || "", log.date || "");
                                     }
@@ -651,11 +651,12 @@ milestones: []
 
                         // 📢 更新偵測：比對最新 log 日期與 localStorage
                         try {
-                            const latestLog = cleanLogs[0]; // 已按日期降序排序，第一筆最新
-                            const lastSeen = localStorage.getItem("lastSeenLog");
+                            const latestLog = cleanLogs[0];
+                            let lastSeen = null;
+                            try { lastSeen = localStorage.getItem("lastSeenLog"); } catch(e) {}
                             if (latestLog && latestLog.date !== lastSeen) {
                                 setShowUpdateBanner(true);
-                                localStorage.setItem("lastSeenLog", latestLog.date);
+                                try { localStorage.setItem("lastSeenLog", latestLog.date); } catch(e) {}
                             }
                         } catch (bannerErr) {
                             console.error("更新偵測錯誤：", bannerErr);
