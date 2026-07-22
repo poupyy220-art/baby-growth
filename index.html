@@ -80,6 +80,7 @@
         
         // 🔑 設定密碼 (如果要改密碼改這裡)
         const PASSCODE = "20241226"; 
+        const RESOURCE_API_URL = "https://script.google.com/macros/s/AKfycbzplIGydGsb-vjUJMeG4SE-qV0sM6mgnjvVBOIA7T5q9m14u5VxHJOsbAkZO8DtCZM3/exec";
 
         // --- Helper Functions ---
         const parseDate = (dateStr) => {
@@ -507,15 +508,59 @@ return(
         </div>
     );
 };
-        const ResourceLibrary = ({ books, toys, styles, onExport }) => {
+        const ResourceLibrary = ({ books, toys, styles, onExport, onResourceSaved }) => {
             const [resourceType, setResourceType] = useState('book');
             const [query, setQuery] = useState('');
+            const [showForm, setShowForm] = useState(false);
+            const [saving, setSaving] = useState(false);
+            const [saveMessage, setSaveMessage] = useState('');
+            const [adminToken, setAdminToken] = useState(() => {
+                try { return sessionStorage.getItem('resource_admin_token') || ''; } catch (e) { return ''; }
+            });
+            const emptyForm = { title:'', name:'', age:'', category:'', display_group:'', development_domains:'', image_url:'', guide:'', play_guide:'', location:'', favorite:false, notes:'' };
+            const [form, setForm] = useState(emptyForm);
             const source = resourceType === 'book' ? books : toys;
             const filtered = useMemo(() => {
                 const keyword = query.trim().toLowerCase();
                 if (!keyword) return source;
                 return source.filter(item => Object.values(item).join(' ').toLowerCase().includes(keyword));
             }, [source, query]);
+
+            const updateForm = (field, value) => setForm(current => ({ ...current, [field]: value }));
+            const submitResource = async event => {
+                event.preventDefault();
+                const resourceName = resourceType === 'book' ? form.title.trim() : form.name.trim();
+                if (!resourceName) return setSaveMessage(resourceType === 'book' ? '請填寫書名。' : '請填寫玩具名稱。');
+                if (!adminToken.trim()) return setSaveMessage('請輸入管理授權碼。');
+                setSaving(true);
+                setSaveMessage('');
+                try {
+                    const payload = {
+                        ...form,
+                        resource_type: resourceType,
+                        admin_token: adminToken.trim(),
+                        language: resourceType === 'book' ? '中文' : undefined,
+                        status: 'active',
+                        rotation_status: resourceType === 'toy' ? 'active' : undefined
+                    };
+                    const response = await fetch(`${RESOURCE_API_URL}?action=saveResource`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload),
+                        redirect: 'follow'
+                    });
+                    const result = await response.json();
+                    if (result.status !== 'success') throw new Error(result.message || '新增失敗');
+                    try { sessionStorage.setItem('resource_admin_token', adminToken.trim()); } catch (e) {}
+                    setSaveMessage(`✅ 已新增至${result.testMode ? '測試資料庫' : '正式資料庫'}：${result.saved.name}`);
+                    setForm(emptyForm);
+                    if (onResourceSaved) await onResourceSaved(resourceType);
+                } catch (error) {
+                    setSaveMessage(`❌ ${error.message || '新增失敗，請稍後再試。'}`);
+                } finally {
+                    setSaving(false);
+                }
+            };
 
             return (
                 <div className="space-y-4">
@@ -526,7 +571,10 @@ return(
                                 <h2 className={`${styles.h3} font-bold text-gray-800 mt-1`}>把發展建議變成家裡就能做的活動</h2>
                                 <p className={`${styles.small} text-gray-500 mt-1`}>目前收錄 {books.length} 本書、{toys.length} 組玩具，可依名稱、主題與發展面向搜尋。</p>
                             </div>
-                            <button onClick={onExport} className="shrink-0 text-xs bg-emerald-500 text-white px-3 py-2 rounded-xl font-bold shadow-sm active:scale-95">匯出 Excel</button>
+                            <div className="shrink-0 flex flex-col gap-2">
+                                <button onClick={() => { setShowForm(value => !value); setSaveMessage(''); }} className="text-xs bg-pink-500 text-white px-3 py-2 rounded-xl font-bold shadow-sm active:scale-95">＋ 新增資料</button>
+                                <button onClick={onExport} className="text-xs bg-emerald-500 text-white px-3 py-2 rounded-xl font-bold shadow-sm active:scale-95">匯出 Excel</button>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 mt-4">
                             <button onClick={() => setResourceType('book')} className={`py-2 rounded-xl font-bold ${styles.small} ${resourceType==='book'?'bg-amber-400 text-white':'bg-amber-50 text-amber-700'}`}>📚 書籍 {books.length}</button>
@@ -534,6 +582,47 @@ return(
                         </div>
                         <input value={query} onChange={event => setQuery(event.target.value)} placeholder={resourceType === 'book' ? '搜尋書名、語言、主題或發展面向' : '搜尋玩具、位置或輪替狀態'} className="mt-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-200" />
                     </div>
+
+                    {showForm && (
+                        <form onSubmit={submitResource} className="bg-white p-5 rounded-3xl shadow-sm border border-pink-100 space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <div className="text-xs font-bold text-pink-600">管理者新增</div>
+                                    <h3 className={`${styles.h3} font-bold text-gray-800`}>{resourceType === 'book' ? '新增一本書' : '新增一組玩具'}</h3>
+                                </div>
+                                <button type="button" onClick={() => setShowForm(false)} className="text-xs text-gray-500 px-3 py-2 rounded-xl bg-gray-100">關閉</button>
+                            </div>
+                            <p className="text-[11px] text-gray-500">授權碼只暫存在這個分頁，關閉分頁後會自動清除，不會寫入網站程式碼。</p>
+                            <label className="block text-xs font-bold text-gray-600">管理授權碼
+                                <input type="password" value={adminToken} onChange={event => setAdminToken(event.target.value)} autoComplete="off" className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm" placeholder="第一次新增時輸入" />
+                            </label>
+                            <label className="block text-xs font-bold text-gray-600">{resourceType === 'book' ? '書名 *' : '玩具名稱 *'}
+                                <input value={resourceType === 'book' ? form.title : form.name} onChange={event => updateForm(resourceType === 'book' ? 'title' : 'name', event.target.value)} className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm" required />
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <label className="block text-xs font-bold text-gray-600">適用月齡
+                                    <input value={form.age} onChange={event => updateForm('age', event.target.value)} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-3 text-sm" placeholder="例如 18M+" />
+                                </label>
+                                <label className="block text-xs font-bold text-gray-600">{resourceType === 'book' ? '分類' : '收納位置'}
+                                    <input value={resourceType === 'book' ? form.category : form.location} onChange={event => updateForm(resourceType === 'book' ? 'category' : 'location', event.target.value)} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-3 text-sm" />
+                                </label>
+                            </div>
+                            <label className="block text-xs font-bold text-gray-600">發展面向
+                                <input value={form.development_domains} onChange={event => updateForm('development_domains', event.target.value)} className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm" placeholder="例如 語言,認知" />
+                            </label>
+                            <label className="block text-xs font-bold text-gray-600">圖片網址（選填）
+                                <input type="url" value={form.image_url} onChange={event => updateForm('image_url', event.target.value)} className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm" placeholder="https://..." />
+                            </label>
+                            <label className="block text-xs font-bold text-gray-600">{resourceType === 'book' ? '共讀建議' : '玩法建議'}
+                                <textarea value={resourceType === 'book' ? form.guide : form.play_guide} onChange={event => updateForm(resourceType === 'book' ? 'guide' : 'play_guide', event.target.value)} rows="3" className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm resize-none" />
+                            </label>
+                            <label className="flex items-center gap-2 text-xs font-bold text-gray-600">
+                                <input type="checkbox" checked={form.favorite} onChange={event => updateForm('favorite', event.target.checked)} className="w-4 h-4" />設為喜愛
+                            </label>
+                            {saveMessage && <div className={`text-xs rounded-xl px-3 py-2 ${saveMessage.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{saveMessage}</div>}
+                            <button type="submit" disabled={saving} className="w-full bg-pink-500 disabled:bg-pink-200 text-white rounded-xl py-3 font-bold text-sm">{saving ? '新增中…' : `確認新增${resourceType === 'book' ? '書籍' : '玩具'}`}</button>
+                        </form>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {filtered.map(item => {
@@ -698,6 +787,20 @@ toys: []
                 XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(data.books), 'Books');
                 XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(data.toys), 'Toys');
                 XLSX.writeFile(workbook, `妹妹書籍玩具資料庫_${new Date().toISOString().slice(0,10)}.xlsx`);
+            };
+
+            const refreshResourceData = async resourceType => {
+                try {
+                    const response = await fetch(`${RESOURCE_API_URL}?action=resources&resource_type=${resourceType}&limit=1000`);
+                    const result = await response.json();
+                    if (result.status !== 'success' || !Array.isArray(result.data)) return;
+                    setData(current => ({
+                        ...current,
+                        [resourceType === 'book' ? 'books' : 'toys']: result.data
+                    }));
+                } catch (error) {
+                    console.error('Resource refresh error:', error);
+                }
             };
 
 			const renderIcon = (iconName, className) => {
@@ -1084,7 +1187,7 @@ t==='resources'? '📚 書籍玩具':
                             </>
                         )}
                         {tab === 'resources' && (
-                            <ResourceLibrary books={data.books} toys={data.toys} styles={T} onExport={exportResourcesToExcel} />
+                            <ResourceLibrary books={data.books} toys={data.toys} styles={T} onExport={exportResourcesToExcel} onResourceSaved={refreshResourceData} />
                         )}
                         {tab === 'journey' && (
                             <>
@@ -1234,8 +1337,6 @@ t==='resources'? '📚 書籍玩具':
 </body>
 
 </html>
-
-
 
 
 
