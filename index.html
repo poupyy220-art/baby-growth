@@ -29,6 +29,7 @@
 <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
 	
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.10/babel.min.js"></script>
 
 
@@ -71,28 +72,14 @@
             travel:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=2140673283&single=true&output=csv",
             logs:    "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=491644359&single=true&output=csv",
             development: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=248325933&single=true&output=csv",
-			milestones: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=593137954&single=true&output=csv"
+			milestones: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=593137954&single=true&output=csv",
+            books: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=1115212706&single=true&output=csv",
+            toys: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn9lQVOTboOyw4K5u-a6J5MsN7hw23c2tp4YwXyGtitBgWZlDf72G--tLY4hPdt7UUasrHHuqNUc5W/pub?gid=311739629&single=true&output=csv"
         };
         const BIRTH_DATE = new Date(2024, 11, 26); 
         
         // 🔑 設定密碼 (如果要改密碼改這裡)
         const PASSCODE = "20241226"; 
-
-        // 📣 LINE 通知設定 (透過 Google Apps Script 代理)
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwatJE0vgnlm3JfQAMGHwLPFEMw52gqXJDwcujKK1wNnyaTemOvkl0oV0g2KHPVk2Yz/exec";
-
-        async function sendLineNotify(title, text, date) {
-            try {
-                await fetch(GAS_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title, text, date })
-                });
-                console.log("✅ LINE 通知已發送：", title);
-            } catch (err) {
-                console.error("❌ LINE 通知發送失敗：", err);
-            }
-        }
 
         // --- Helper Functions ---
         const parseDate = (dateStr) => {
@@ -218,7 +205,61 @@ function dampedScore(count, target = 8) {
         };
 
 
-// --- 發展雷達 ---
+// --- 發展雷達：v1.5 的細分類映射到六個主要面向 ---
+const RADAR_DOMAIN_MAP = {
+    gross_motor: "gross_motor",
+    fine_motor: "fine_motor",
+    language: "language",
+    communication: "language",
+    cognitive: "cognitive",
+    executive_function: "cognitive",
+    social: "social",
+    emotional_regulation: "social",
+    adaptive: "adaptive",
+    self_help: "adaptive"
+};
+
+const RADAR_DOMAIN_NAMES = {
+    gross_motor: "大動作",
+    fine_motor: "精細動作",
+    language: "語言溝通",
+    cognitive: "認知與執行功能",
+    social: "社交與情緒調節",
+    adaptive: "生活適應與自理"
+};
+
+const DEVELOPMENT_STAGE_WEIGHT = {
+    emerging: 0.5,
+    progressing: 1,
+    advanced: 1.5,
+    stable: 2,
+    functional_play: 1.25,
+    transition_event: 2.5,
+    achieved: 2
+};
+
+function developmentWeight(record) {
+    const stageWeight = DEVELOPMENT_STAGE_WEIGHT[record.stage] || 0;
+    if (record.type === "summary") return stageWeight * 2.5;
+    if (["skill", "play", "communication", "routine"].includes(record.type)) return stageWeight;
+    if (record.type === "transition") return record.stage === "transition_event" ? stageWeight : 0;
+    // assessment 是正式評估紀錄、不是能力次數；避免直接灌高雷達。
+    return 0;
+}
+
+function calculateDevelopmentScores(data, logScores) {
+    const scores = { gross_motor: 0, fine_motor: 0, language: 0, cognitive: 0, social: 0, adaptive: 0 };
+    (data || []).forEach(record => {
+        const radarDomain = RADAR_DOMAIN_MAP[record.domain];
+        if (radarDomain) scores[radarDomain] += developmentWeight(record);
+    });
+    Object.keys(scores).forEach(domain => {
+        const raw = (logScores && logScores[domain]) || 0;
+        scores[domain] = scores[domain] * 0.5 + dampedScore(raw, 12) * 0.5;
+    });
+    return scores;
+}
+
 const DevelopmentRadar = ({ data, logScores }) => {
 
 if (!Recharts || !Recharts.RadarChart) return null;
@@ -233,60 +274,17 @@ ResponsiveContainer
 } = Recharts;
 
 
-// 計算各領域分數
-const scores = {
-  gross_motor:0,
-  fine_motor:0,
-  language:0,
-  cognitive:0,
-  social:0,
-  adaptive:0
-};
-
-(data || []).forEach(d => {
-  let weight = 0;
-
-  // summary = 月齡整體判讀主體
-  if (d.type === "summary") {
-    if (d.stage === "emerging") weight = 2;
-    if (d.stage === "progressing") weight = 3;
-    if (d.stage === "advanced") weight = 4;
-    if (d.stage === "achieved") weight = 5;
-  }
-
-  // skill / play / routine = 具體能力證據補強
-  else if (["skill", "play", "routine"].includes(d.type)) {
-    if (d.stage === "emerging") weight = 0.5;
-    if (d.stage === "progressing") weight = 1;
-    if (d.stage === "advanced") weight = 1.5;
-    if (d.stage === "achieved") weight = 2;
-  }
-
-  // transition = 先不納入雷達主分數
-  else if (d.type === "transition") {
-    weight = 0;
-  }
-
-  if (scores[d.domain] !== undefined) {
-    scores[d.domain] += weight;
-  }
-});
-
-// 加入 logs 行為分數
-Object.keys(scores).forEach(k => {
-  const raw = (logScores && logScores[k]) || 0;
-  scores[k] = scores[k] * 0.5 + dampedScore(raw, 12) * 0.5;
-});
+const scores = calculateDevelopmentScores(data, logScores);
 
 // 轉成 RadarChart 格式
 // ✅ PATCH 1: 限制每個領域分數最大值為 10，避免 Logs 累積後 scale 無限成長
 const radarData = [
- {subject:"大動作",value:Math.min(scores.gross_motor,10)},
- {subject:"精細動作",value:Math.min(scores.fine_motor,10)},
- {subject:"語言",value:Math.min(scores.language,10)},
- {subject:"認知",value:Math.min(scores.cognitive,10)},
- {subject:"社交",value:Math.min(scores.social,10)},
- {subject:"生活適應",value:Math.min(scores.adaptive,10)}
+ {subject:RADAR_DOMAIN_NAMES.gross_motor,value:Math.min(scores.gross_motor,10)},
+ {subject:RADAR_DOMAIN_NAMES.fine_motor,value:Math.min(scores.fine_motor,10)},
+ {subject:RADAR_DOMAIN_NAMES.language,value:Math.min(scores.language,10)},
+ {subject:RADAR_DOMAIN_NAMES.cognitive,value:Math.min(scores.cognitive,10)},
+ {subject:RADAR_DOMAIN_NAMES.social,value:Math.min(scores.social,10)},
+ {subject:RADAR_DOMAIN_NAMES.adaptive,value:Math.min(scores.adaptive,10)}
 ]
 return (
 
@@ -319,56 +317,8 @@ fillOpacity={0.4}
 };
 
 const DevelopmentAnalysis = ({ data, logScores }) => {
-    // 建立基礎分數表
-    const scores = {
-        gross_motor: 0,
-        fine_motor: 0,
-        language: 0,
-        cognitive: 0,
-        social: 0,
-        adaptive:0
-    };
-
-    // 1. 計算正式發展評估的分數 (Development 分頁)
-// summary = 月齡整體判讀主體
-// skill/play/routine = 具體能力證據補強
-// transition = 先不納入主分數
-(data || []).forEach(d => {
-    let weight = 0;
-
-    if (d.type === "summary") {
-        if (d.stage === "emerging") weight = 2;
-        if (d.stage === "progressing") weight = 3;
-        if (d.stage === "advanced") weight = 4;
-        if (d.stage === "achieved") weight = 5;
-    } else if (["skill", "play", "routine"].includes(d.type)) {
-        if (d.stage === "emerging") weight = 0.5;
-        if (d.stage === "progressing") weight = 1;
-        if (d.stage === "advanced") weight = 1.5;
-        if (d.stage === "achieved") weight = 2;
-    } else if (d.type === "transition") {
-        weight = 0;
-    }
-
-    if (scores[d.domain] !== undefined) {
-        scores[d.domain] += weight;
-    }
-});
-
-    // 2. 💡 重要修正：同步納入日記 (Logs) 的廣泛辨識分數
-    Object.keys(scores).forEach(k => {
-    const raw = (logScores && logScores[k]) || 0;
-    scores[k] = scores[k] * 0.5 + dampedScore(raw, 12) * 0.5;
-});
-
-    const domainName = {
-        gross_motor: "大動作",
-        fine_motor: "精細動作",
-        language: "語言",
-        cognitive: "認知",
-        adaptive: "生活適應",
-        social: "社交"
-    };
+    const scores = calculateDevelopmentScores(data, logScores);
+    const domainName = RADAR_DOMAIN_NAMES;
 
     // 排序找出最強與最需加強的領域
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -485,12 +435,22 @@ gross_motor:"🏃 大動作",
 fine_motor:"✋ 精細動作",
 language:"🗣 語言",
 cognitive:"🧠 認知",
-social:"💞 社交"
+social:"💞 社交",
+adaptive:"🏠 生活適應",
+communication:"💬 溝通",
+executive_function:"🧩 執行功能",
+emotional_regulation:"🌤 情緒調節",
+self_help:"🧺 自理"
 }
 
 const stageColor = {
 achieved:"bg-green-100 text-green-700",
 emerging:"bg-yellow-100 text-yellow-700",
+progressing:"bg-blue-100 text-blue-700",
+advanced:"bg-purple-100 text-purple-700",
+stable:"bg-green-100 text-green-700",
+functional_play:"bg-teal-100 text-teal-700",
+transition_event:"bg-pink-100 text-pink-700",
 next:"bg-indigo-100 text-indigo-700"
 }
 
@@ -547,6 +507,62 @@ return(
         </div>
     );
 };
+        const ResourceLibrary = ({ books, toys, styles, onExport }) => {
+            const [resourceType, setResourceType] = useState('book');
+            const [query, setQuery] = useState('');
+            const source = resourceType === 'book' ? books : toys;
+            const filtered = useMemo(() => {
+                const keyword = query.trim().toLowerCase();
+                if (!keyword) return source;
+                return source.filter(item => Object.values(item).join(' ').toLowerCase().includes(keyword));
+            }, [source, query]);
+
+            return (
+                <div className="space-y-4">
+                    <div className="bg-white p-5 rounded-3xl shadow-sm border border-amber-100">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <div className="text-xs font-bold text-amber-600">家中資源資料庫</div>
+                                <h2 className={`${styles.h3} font-bold text-gray-800 mt-1`}>把發展建議變成家裡就能做的活動</h2>
+                                <p className={`${styles.small} text-gray-500 mt-1`}>目前收錄 {books.length} 本書、{toys.length} 組玩具，可依名稱、主題與發展面向搜尋。</p>
+                            </div>
+                            <button onClick={onExport} className="shrink-0 text-xs bg-emerald-500 text-white px-3 py-2 rounded-xl font-bold shadow-sm active:scale-95">匯出 Excel</button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-4">
+                            <button onClick={() => setResourceType('book')} className={`py-2 rounded-xl font-bold ${styles.small} ${resourceType==='book'?'bg-amber-400 text-white':'bg-amber-50 text-amber-700'}`}>📚 書籍 {books.length}</button>
+                            <button onClick={() => setResourceType('toy')} className={`py-2 rounded-xl font-bold ${styles.small} ${resourceType==='toy'?'bg-sky-400 text-white':'bg-sky-50 text-sky-700'}`}>🧸 玩具 {toys.length}</button>
+                        </div>
+                        <input value={query} onChange={event => setQuery(event.target.value)} placeholder={resourceType === 'book' ? '搜尋書名、語言、主題或發展面向' : '搜尋玩具、位置或輪替狀態'} className="mt-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-200" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {filtered.map(item => {
+                            const isBook = resourceType === 'book';
+                            const title = isBook ? item.title : item.name;
+                            const domains = item.development_domains || '';
+                            const description = isBook ? (item.guide || item.summary) : (item.play_guide || item.notes);
+                            return (
+                                <article key={item.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex min-h-[150px]">
+                                    <div className="w-24 shrink-0 bg-gray-50 flex items-center justify-center overflow-hidden">
+                                        {item.image_url ? <img src={item.image_url} alt="" loading="lazy" className="w-full h-full object-cover" onError={event => { event.currentTarget.style.display='none'; }} /> : <span className="text-3xl">{isBook ? '📖' : '🧩'}</span>}
+                                    </div>
+                                    <div className="p-4 min-w-0">
+                                        <h3 className={`${styles.h3} font-bold text-gray-800 leading-snug`}>{title}</h3>
+                                        <div className="flex flex-wrap gap-1 mt-2">
+                                            {(isBook ? [item.language, item.category, item.age] : [item.location, item.rotation_status]).filter(Boolean).map(label => <span key={label} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{label}</span>)}
+                                        </div>
+                                        {domains && <p className="text-[11px] text-indigo-600 font-bold mt-2">🧠 {domains}</p>}
+                                        {description && <p className={`${styles.small} text-gray-500 mt-2 line-clamp-3`}>{description}</p>}
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                    {!filtered.length && <div className="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm">找不到符合條件的資料</div>}
+                </div>
+            );
+        };
+
         // --- 主要 Dashboard ---
         const GrowthDashboard = () => {
             const [tab, setTab] = useState('journey');
@@ -557,7 +573,9 @@ medical: [],
 travel: [], 
 logs: [], 
 development: [],
-milestones: []
+milestones: [],
+books: [],
+toys: []
 });
             const [error, setError] = useState(null);
             const [largeText, setLargeText] = useState(false);
@@ -591,13 +609,15 @@ milestones: []
             useEffect(() => {
                 const loadData = async () => {
                     try {
-                        const [growth, medical, travel, logs, development, milestones] = await Promise.all([
+                        const [growth, medical, travel, logs, development, milestones, books, toys] = await Promise.all([
                             fetchCSV(SHEET_URLS.growth),
                             fetchCSV(SHEET_URLS.medical),
                             fetchCSV(SHEET_URLS.travel),
                             fetchCSV(SHEET_URLS.logs),
                             fetchCSV(SHEET_URLS.development),
-							fetchCSV(SHEET_URLS.milestones)
+							fetchCSV(SHEET_URLS.milestones),
+                            fetchCSV(SHEET_URLS.books),
+                            fetchCSV(SHEET_URLS.toys)
                         ]);
 
                         const cleanGrowth = growth.filter(r => r.month).map(r => ({
@@ -621,33 +641,11 @@ milestones: []
 						travel: cleanTravel,
 						logs: cleanLogs,
 						development: cleanDev,
-						milestones: cleanMilestones
+						milestones: cleanMilestones,
+                        books: books.filter(r => r.id && r.title),
+                        toys: toys.filter(r => r.id && r.name)
 						
 						});
-
-                        // 📣 LINE 通知：偵測新增日誌並發送通知
-                        try {
-                            const SEEN_KEY = "mm_seen_log_keys";
-                            const makeKey = (log) => `${log.date}|${log.title}`;
-                            let seenRaw = null;
-                            try { seenRaw = localStorage.getItem(SEEN_KEY); } catch(e) {}
-                            const seenKeys = seenRaw ? new Set(JSON.parse(seenRaw)) : null;
-                            const currentKeys = cleanLogs.map(makeKey);
-
-                            if (seenKeys === null) {
-                                try { localStorage.setItem(SEEN_KEY, JSON.stringify(currentKeys)); } catch(e) {}
-                            } else {
-                                const newLogs = cleanLogs.filter(log => !seenKeys.has(makeKey(log)));
-                                if (newLogs.length > 0) {
-                                    try { localStorage.setItem(SEEN_KEY, JSON.stringify(currentKeys)); } catch(e) {}
-                                    for (const log of newLogs) {
-                                        await sendLineNotify(log.title || "新紀錄", log.parent_text || "", log.date || "");
-                                    }
-                                }
-                            }
-                        } catch (notifyErr) {
-                            console.error("LINE 通知流程錯誤：", notifyErr);
-                        }
 
                         // 📢 更新偵測：比對最新 log 日期與 localStorage
                         try {
@@ -692,6 +690,14 @@ milestones: []
                 link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
                 link.setAttribute("download", `Meimei_Cloud_Backup.csv`);
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            };
+
+            const exportResourcesToExcel = () => {
+                if (!window.XLSX) return alert('Excel 功能載入中，請稍後再試。');
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(data.books), 'Books');
+                XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(data.toys), 'Toys');
+                XLSX.writeFile(workbook, `妹妹書籍玩具資料庫_${new Date().toISOString().slice(0,10)}.xlsx`);
             };
 
 			const renderIcon = (iconName, className) => {
@@ -771,10 +777,14 @@ const logDomainScores = useMemo(() => {
 
     (data.logs || []).forEach(log => {
 
-        // ✅ 1. 人工 domain（保留，但不 return）
-        if (log.domain && scores[log.domain] !== undefined) {
-            scores[log.domain] += 1;
-        }
+        // ✅ 1. v1.5 Logs domain 映射到六個主要雷達面向。
+        const logDomainMap = {
+            gross_motor: "gross_motor", fine_motor: "fine_motor", language: "language",
+            cognitive: "cognitive", social: "social", play: "cognitive",
+            self_help: "adaptive", family: "social", travel: "adaptive", emotional: "social"
+        };
+        const primaryDomain = logDomainMap[log.domain];
+        if (primaryDomain) scores[primaryDomain] += 1;
 
         // ✅ 2. 組合文字
         const combinedText = (
@@ -1002,13 +1012,14 @@ return combined.sort((a,b)=>parseDate(b.date)-parseDate(a.date));
                     </div>
 
                     <div className="flex gap-2 mt-4 overflow-x-auto pb-1 no-scrollbar justify-center">
-                      {['journey','timeline','log', 'dev', 'health', 'travel'].map(t => (
+                      {['journey','timeline','log', 'dev', 'resources', 'health', 'travel'].map(t => (
                             <button key={t} onClick={()=>setTab(t)} className={`px-4 py-2 rounded-full ${T.small} font-bold whitespace-nowrap transition-all ${tab===t ? 'tab-btn-active' : 'tab-btn-inactive'}`}>{
 t==='journey'?'⭐ 人生時間軸':
 t==='timeline'?'🕰 Timeline':
 t==='health'?'🏥 醫療':
 t==='travel'?'✈️ 足跡':
 t==='dev'? '📊 發展月報':
+t==='resources'? '📚 書籍玩具':
 '📅 時光機'
 }</button>
                         ))}
@@ -1071,6 +1082,9 @@ t==='dev'? '📊 發展月報':
                                     </div>
                                 ))}
                             </>
+                        )}
+                        {tab === 'resources' && (
+                            <ResourceLibrary books={data.books} toys={data.toys} styles={T} onExport={exportResourcesToExcel} />
                         )}
                         {tab === 'journey' && (
                             <>
@@ -1220,10 +1234,6 @@ t==='dev'? '📊 發展月報':
 </body>
 
 </html>
-
-
-
-
 
 
 
