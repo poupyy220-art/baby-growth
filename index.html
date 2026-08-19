@@ -80,7 +80,7 @@
         
         // 🔑 設定密碼 (如果要改密碼改這裡)
         const PASSCODE = "20241226"; 
-        const RESOURCE_API_URL = "https://script.google.com/macros/s/AKfycbzplIGydGsb-vjUJMeG4SE-qV0sM6mgnjvVBOIA7T5q9m14u5VxHJOsbAkZO8DtCZM3/exec";
+        const RESOURCE_API_URL = "https://script.google.com/macros/s/AKfycbzMTRTmN8hz5-lfE77rWzPk1P-6EcgCfTbczMkBrQ6pmcZHc5exF-8Owm4DAnvkd4_I/exec";
 
         // --- Helper Functions ---
         const parseDate = (dateStr) => {
@@ -533,33 +533,54 @@ return(
                 if (!resourceName) return setSaveMessage(resourceType === 'book' ? '請填寫書名。' : '請填寫玩具名稱。');
                 if (!adminToken.trim()) return setSaveMessage('請輸入管理授權碼。');
                 setSaving(true);
-                setSaveMessage('');
+                setSaveMessage('請稍候，正在確認結果…');
+                const payload = {
+                    ...form,
+                    resource_type: resourceType,
+                    admin_token: adminToken.trim(),
+                    language: resourceType === 'book' ? '中文' : undefined,
+                    status: 'active',
+                    rotation_status: resourceType === 'toy' ? 'active' : undefined
+                };
+                let confirmedResult = null;
+                let requestError = null;
                 try {
-                    const payload = {
-                        ...form,
-                        resource_type: resourceType,
-                        admin_token: adminToken.trim(),
-                        language: resourceType === 'book' ? '中文' : undefined,
-                        status: 'active',
-                        rotation_status: resourceType === 'toy' ? 'active' : undefined
-                    };
                     const response = await fetch(`${RESOURCE_API_URL}?action=saveResource`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify(payload),
                         redirect: 'follow'
                     });
-                    const result = await response.json();
-                    if (result.status !== 'success') throw new Error(result.message || '新增失敗');
-                    try { sessionStorage.setItem('resource_admin_token', adminToken.trim()); } catch (e) {}
-                    setSaveMessage(`✅ 已新增至${result.testMode ? '測試資料庫' : '正式資料庫'}：${result.saved.name}`);
-                    setForm(emptyForm);
-                    if (onResourceSaved) await onResourceSaved(resourceType);
+                    confirmedResult = await response.json();
                 } catch (error) {
-                    setSaveMessage(`❌ ${error.message || '新增失敗，請稍後再試。'}`);
-                } finally {
-                    setSaving(false);
+                    requestError = error;
                 }
+                // Google Apps Script 的回應轉址偶爾會失敗收不到確認內容，但實際寫入通常已經在伺服器端完成，
+                // 所以無論有沒有拿到確認回應，都重新整理清單，用「清單裡是否真的出現這筆」來判斷結果。
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                let actuallySaved = false;
+                if (onResourceSaved) {
+                    const refreshed = await onResourceSaved(resourceType);
+                    if (refreshed) {
+                        actuallySaved = refreshed.some(item => {
+                            const name = resourceType === 'book' ? item.title : item.name;
+                            return name && name.trim() === resourceName;
+                        });
+                    }
+                }
+                if (confirmedResult && confirmedResult.status === 'success') {
+                    try { sessionStorage.setItem('resource_admin_token', adminToken.trim()); } catch (e) {}
+                    setSaveMessage(`✅ 已新增至${confirmedResult.testMode ? '測試資料庫' : '正式資料庫'}：${confirmedResult.saved.name}`);
+                    setForm(emptyForm);
+                } else if (actuallySaved) {
+                    try { sessionStorage.setItem('resource_admin_token', adminToken.trim()); } catch (e) {}
+                    setSaveMessage(`✅ 已新增：${resourceName}（伺服器沒有回傳確認訊息，但清單裡已經找到這筆資料）`);
+                    setForm(emptyForm);
+                } else {
+                    const message = (confirmedResult && confirmedResult.message) || (requestError && requestError.message) || '新增失敗，請稍後再試。';
+                    setSaveMessage(`❌ ${message}`);
+                }
+                setSaving(false);
             };
 
             return (
@@ -793,13 +814,15 @@ toys: []
                 try {
                     const response = await fetch(`${RESOURCE_API_URL}?action=resources&resource_type=${resourceType}&limit=1000`);
                     const result = await response.json();
-                    if (result.status !== 'success' || !Array.isArray(result.data)) return;
+                    if (result.status !== 'success' || !Array.isArray(result.data)) return null;
                     setData(current => ({
                         ...current,
                         [resourceType === 'book' ? 'books' : 'toys']: result.data
                     }));
+                    return result.data;
                 } catch (error) {
                     console.error('Resource refresh error:', error);
+                    return null;
                 }
             };
 
